@@ -11,9 +11,11 @@ import type { IndustryPreset } from "../types";
  *
  * See CONTRIBUTING.md ("Add an industry") for the full walkthrough.
  */
+import { healthcare } from "./healthcare";
+
 export const industries: Record<string, IndustryPreset> = {
+  [healthcare.id]: healthcare,
   // [ecommerce.id]: ecommerce,   <- Person D
   // [finance.id]: finance,       <- Person D
-  // [healthcare.id]: healthcare, <- Person D
   // [saas.id]: saas,             <- Person D
 };

@@ -46,11 +46,33 @@ export type LanguageId =
   | "java"
   | "csharp";
 
+/**
+ * Applitools match levels used by the generated "try it out" tests. Each level
+ * gets its own test file so a first-time user can see the difference.
+ */
+export type MatchLevel = "dynamic" | "exact" | "layout";
+
+/** A single file in a generated runnable project. */
+export interface ProjectFile {
+  /** Path relative to the project root, e.g. "tests/login.layout.spec.js". */
+  path: string;
+  contents: string;
+  /** Highlight hint for the preview UI. */
+  language?: LanguageId | "html" | "json" | "env" | "markdown" | "text";
+}
+
 export interface GeneratedSnippet {
   /** Suggested filename for download, e.g. "eyes.spec.ts". */
   filename: string;
   language: LanguageId;
   code: string;
+  /**
+   * Optional full, runnable project (bare-minimum config + a sample page + one
+   * test per match level). When present, the UI offers a "download project"
+   * (zip) in addition to copying `code`. Purely additive: consumers that only
+   * read `code` keep working.
+   */
+  files?: ProjectFile[];
 }
 
 export interface GeneratorOptions {
