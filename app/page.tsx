@@ -1,69 +1,124 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ThemeToggle } from "./theme-toggle";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <div className="flex min-h-dvh flex-col">
+      <SiteHeader />
+
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-6 py-12 sm:px-8 sm:py-16">
+        <section className="flex flex-col gap-4">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            Applitools Eyes snippet generator
+          </span>
+          <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            Generate a tailored Applitools Eyes test in seconds
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="max-w-2xl text-pretty text-base leading-7 text-muted-foreground">
+            Pick an{" "}
+            <span className="font-medium text-foreground">industry</span> and a{" "}
+            <span className="font-medium text-foreground">framework</span>, then
+            download the files you need to run your first visual test.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+        </section>
+
+        {/*
+          Wizard integration point — owned by Person B.
+          Person B: replace the placeholder below with the wizard, e.g.
+              import { GeneratorWizard } from "@/components/wizard";
+              ...
+              <GeneratorWizard />
+          The wizard reads frameworks/industries from lib/engine.ts
+          (listFrameworks / listIndustries) and renders CodePreview.
+        */}
+        <section
+          aria-label="Snippet generator"
+          className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
+        >
+          <WizardPlaceholder />
+        </section>
       </main>
+
+      <SiteFooter />
     </div>
+  );
+}
+
+function SiteHeader() {
+  return (
+    <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4 sm:px-8">
+        <Link href="/" className="flex items-center gap-2.5">
+          <EyeMark className="h-6 w-6 text-accent" />
+          <span className="text-sm font-semibold tracking-tight sm:text-base">
+            Eyes Capabilities Generator
+          </span>
+        </Link>
+        <div className="flex items-center gap-3">
+          <a
+            href="https://applitools.com/docs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Eyes docs
+          </a>
+          <ThemeToggle />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="border-t border-border">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-2 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-8">
+        <p>
+          Snippets reference{" "}
+          <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.85em]">
+            APPLITOOLS_API_KEY
+          </code>{" "}
+          from your environment — never hard-code secrets.
+        </p>
+        <p>Built for Applitools Eyes.</p>
+      </div>
+    </footer>
+  );
+}
+
+/**
+ * Temporary stand-in so the shell renders and the build stays green before
+ * Person B lands the wizard. Delete this once the wizard is wired in.
+ */
+function WizardPlaceholder() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-muted/50 px-6 py-16 text-center">
+      <EyeMark className="h-8 w-8 text-muted-foreground" />
+      <p className="text-sm font-medium">The generator wizard mounts here</p>
+      <p className="max-w-md text-sm text-muted-foreground">
+        Industry &amp; framework pickers, options, and the copy/download code
+        preview are coming from Person B&apos;s wizard components.
+      </p>
+    </div>
+  );
+}
+
+function EyeMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }
