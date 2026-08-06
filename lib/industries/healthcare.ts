@@ -3,15 +3,14 @@ import type { IndustryPreset } from "../types";
 export const healthcare: IndustryPreset = {
   id: "healthcare",
   label: "Healthcare",
-  description:
-    "Patient portal flows: sign in, dashboard, and appointments across desktop and mobile.",
+  description: "Patient portal flows: appointments, records, billing.",
   appName: "Acme Health",
   batchName: "Healthcare Visual Regression",
-  sampleUrl: "https://demo.applitools.com",
+  sampleUrl: "http://localhost:3000/samples/healthcare",
   viewports: [
     { width: 1440, height: 900, label: "Desktop" },
-    { width: 390, height: 844, label: "Mobile" },
+    { width: 375, height: 667, label: "Mobile" },
   ],
-  checkpoints: ["Login"],
-  tags: ["healthcare", "auth", "responsive"],
+  checkpoints: ["Login", "Patient Dashboard", "Appointment Scheduling", "Medical Records"],
+  tags: ["healthcare", "compliance"],
 };

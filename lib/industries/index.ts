@@ -1,4 +1,9 @@
 import type { IndustryPreset } from "../types";
+import { finance } from "./finance";
+import { ecommerce } from "./ecommerce";
+import { healthcare } from "./healthcare";
+import { education } from "./education";
+import { telecom } from "./telecom";
 
 /**
  * Industry registry.
@@ -14,8 +19,9 @@ import type { IndustryPreset } from "../types";
 import { healthcare } from "./healthcare";
 
 export const industries: Record<string, IndustryPreset> = {
+  [finance.id]: finance,
+  [ecommerce.id]: ecommerce,
   [healthcare.id]: healthcare,
-  // [ecommerce.id]: ecommerce,   <- Person D
-  // [finance.id]: finance,       <- Person D
-  // [saas.id]: saas,             <- Person D
+  [education.id]: education,
+  [telecom.id]: telecom,
 };
