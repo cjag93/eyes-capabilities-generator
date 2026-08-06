@@ -1,12 +1,13 @@
 /**
  * Roadmap catalog.
  *
- * The registries in `frameworks/` and `industries/` only contain things that
- * are *fully implemented*. This catalog lists the full planned line-up so the
- * UI can show everything up front and mark not-yet-built entries as
- * "coming soon". Availability is computed from the registries, so an entry
- * flips to "available" automatically the moment its generator/preset is
- * registered — nothing here needs editing when Person C or D lands one.
+ * Frameworks are a fixed, team-agreed roster of six, most not yet built, so
+ * they use a hardcoded roadmap and are marked "coming soon" until their
+ * generator is registered.
+ *
+ * Industries are Person D's open-ended set, so they are derived directly from
+ * the registry — whatever D registers shows up automatically (no phantom
+ * entries, nothing missing), and there is no "coming soon" state for them.
  */
 import { frameworks } from "./frameworks";
 import { industries } from "./industries";
@@ -62,14 +63,6 @@ const FRAMEWORK_ROADMAP: FrameworkCatalogEntry[] = [
   { id: "xcuitest", label: "XCUITest", category: "mobile", languages: ["Swift"] },
 ];
 
-/** The planned industry line-up. */
-const INDUSTRY_ROADMAP: IndustryCatalogEntry[] = [
-  { id: "healthcare", label: "Healthcare" },
-  { id: "ecommerce", label: "E-commerce" },
-  { id: "finance", label: "Finance" },
-  { id: "saas", label: "SaaS" },
-];
-
 function decorate<T extends { id: string }>(
   entries: T[],
   registry: Record<string, unknown>,
@@ -89,7 +82,15 @@ export function frameworkCatalog(): WithAvailability<FrameworkCatalogEntry>[] {
   return decorate(FRAMEWORK_ROADMAP, frameworks);
 }
 
-/** All industries with a computed availability flag. */
+/**
+ * All registered industries. Derived from the registry (Person D's set), so
+ * everything D adds appears automatically and everything listed is available.
+ */
 export function industryCatalog(): WithAvailability<IndustryCatalogEntry>[] {
-  return decorate(INDUSTRY_ROADMAP, industries);
+  return Object.values(industries).map((industry) => ({
+    id: industry.id,
+    label: industry.label,
+    available: true,
+    status: "available",
+  }));
 }
