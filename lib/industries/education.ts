@@ -13,4 +13,9 @@ export const education: IndustryPreset = {
   ],
   checkpoints: ["Login", "Course Catalog", "Course Detail", "Assignment Submission", "Grade Report"],
   tags: ["education", "lms"],
+  dynamicRegions: [
+    { selector: '[data-testid="course-catalog"]', matchLevel: "layout" },
+    { selector: '[data-testid="grade-chart"]', matchLevel: "layout" },
+    { selector: '[data-testid="due-countdown"]', matchLevel: "dynamic" },
+  ],
 };

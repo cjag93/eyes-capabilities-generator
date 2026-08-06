@@ -120,7 +120,11 @@ export default function EcommercePage() {
             label="dynamic cart badge"
             note="The cart count mutates with every interaction. A brittle pixel-only compare would fail on the number alone; Eyes tracks the region as content and the badge layout as structure."
           />
-          <button type="button" className="relative rounded-md border border-zinc-200 px-3 py-1.5 text-sm dark:border-zinc-700">
+          <button
+            type="button"
+            data-testid="cart-badge"
+            className="relative rounded-md border border-zinc-200 px-3 py-1.5 text-sm dark:border-zinc-700"
+          >
             Cart
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 text-[11px] font-bold text-white">
@@ -132,7 +136,7 @@ export default function EcommercePage() {
       </header>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-8">
-        <div className="flex items-center gap-2">
+        <div data-testid="promo-carousel" className="flex items-center gap-2">
           <Carousel />
         </div>
         <p className="text-xs text-zinc-400">
@@ -142,7 +146,10 @@ export default function EcommercePage() {
           />
         </p>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900 dark:bg-rose-950/40">
+        <div
+          data-testid="flash-sale-countdown"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 dark:border-rose-900 dark:bg-rose-950/40"
+        >
           <span className="text-sm font-medium text-rose-700 dark:text-rose-300">
             🔥 Flash sale ends in <Countdown />
           </span>
@@ -160,7 +167,7 @@ export default function EcommercePage() {
               note="Each card resolves its 'image' after a random delay, and the grid reflows from 4 columns to 1. Eyes' auto-wait avoids capturing half-loaded cards, and the Ultrafast Grid covers every breakpoint from one snapshot."
             />
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div data-testid="product-grid" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PRODUCTS.map((p) => (
               <div
                 key={p.name}

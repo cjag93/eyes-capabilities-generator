@@ -13,4 +13,10 @@ export const ecommerce: IndustryPreset = {
   ],
   checkpoints: ["Home", "Product Listing", "Product Detail", "Cart", "Checkout"],
   tags: ["ecommerce", "checkout"],
+  dynamicRegions: [
+    { selector: '[data-testid="promo-carousel"]', matchLevel: "layout" },
+    { selector: '[data-testid="flash-sale-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="cart-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="product-grid"]', matchLevel: "layout" },
+  ],
 };

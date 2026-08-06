@@ -15,7 +15,7 @@ function Greeting() {
     return () => clearTimeout(id);
   }, []);
 
-  return <span>{text ?? "Hello"}</span>;
+  return <span data-testid="greeting">{text ?? "Hello"}</span>;
 }
 
 function VitalsChart() {
@@ -139,7 +139,11 @@ export default function HealthcarePage() {
 
       <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-4 dark:border-zinc-800 dark:bg-zinc-950">
         <span className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">➕ Acme Health</span>
-        <button type="button" className="relative rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+        <button
+          type="button"
+          data-testid="message-badge"
+          className="relative rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
           ✉️
           {messages !== null && (
             <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
@@ -164,7 +168,10 @@ export default function HealthcarePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <section
+            data-testid="vitals-chart"
+            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <div className="mb-2 flex items-center gap-2">
               <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Heart rate — last 24h</h2>
               <Challenge
@@ -175,7 +182,10 @@ export default function HealthcarePage() {
             <VitalsChart />
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <section
+            data-testid="calendar"
+            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <div className="mb-2 flex items-center gap-2">
               <h2 className="font-medium text-zinc-900 dark:text-zinc-50">This month</h2>
               <Challenge
@@ -187,7 +197,10 @@ export default function HealthcarePage() {
           </section>
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <section
+          data-testid="records-list"
+          className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+        >
           <div className="mb-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Medical records</h2>

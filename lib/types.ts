@@ -14,6 +14,19 @@ export interface Viewport {
 }
 
 /**
+ * A CSS selector paired with the Eyes match level it should be checked at.
+ * Use these for elements that legitimately differ between test runs
+ * (timestamps, counters, randomized/async-loaded content) so the generated
+ * region-based checks don't fail on expected drift. See
+ * https://applitools.com/docs/eyes/playwright/api/defining-regions.
+ */
+export interface IndustryRegion {
+  /** CSS selector identifying the element(s) this region applies to. */
+  selector: string;
+  matchLevel: MatchLevel;
+}
+
+/**
  * An industry-specific preset that drives the *content* of a generated
  * snippet: what app/batch it reports as, where it navigates, which
  * viewports it runs, and which visual checkpoints it captures.
@@ -36,6 +49,13 @@ export interface IndustryPreset {
   checkpoints: string[];
   /** Tags applied to the batch for filtering in the dashboard. */
   tags: string[];
+  /**
+   * Elements on `sampleUrl` known to change between test runs (live
+   * timestamps, random/async-loaded content, rotating carousels). Optional —
+   * only presets with a real sample app to point selectors at need to fill
+   * this in.
+   */
+  dynamicRegions?: IndustryRegion[];
 }
 
 /** Language identifiers double as syntax-highlighting hints. */

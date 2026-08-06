@@ -15,7 +15,7 @@ function LiveClock() {
     return () => clearInterval(id);
   }, []);
 
-  return <span>{time ?? "--:--:--"}</span>;
+  return <span data-testid="live-clock">{time ?? "--:--:--"}</span>;
 }
 
 function SpendingChart() {
@@ -133,7 +133,11 @@ export default function FinancePage() {
             label="dynamic badge"
             note="Unread count is randomized on every load. Pixel-diff tools flag this constantly; Eyes' Visual AI treats small numeric/text deltas as content, not a layout break."
           />
-          <button type="button" className="relative rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800">
+          <button
+            type="button"
+            data-testid="unread-badge"
+            className="relative rounded-full p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+          >
             🔔
             {unread !== null && (
               <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
@@ -198,7 +202,10 @@ export default function FinancePage() {
           <StatCard label="Credit Card" value="-$612.80" hint="Due Aug 22" />
         </div>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <section
+          data-testid="spending-chart"
+          className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+        >
           <div className="mb-2 flex items-center gap-2">
             <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Spending trend</h2>
             <Challenge
@@ -209,7 +216,10 @@ export default function FinancePage() {
           <SpendingChart />
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <section
+          data-testid="transactions-table"
+          className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+        >
           <div className="mb-2 flex items-center gap-2">
             <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Recent transactions</h2>
             <Challenge

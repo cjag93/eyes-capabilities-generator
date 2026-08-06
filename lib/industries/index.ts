@@ -4,6 +4,12 @@ import { ecommerce } from "./ecommerce";
 import { healthcare } from "./healthcare";
 import { education } from "./education";
 import { telecom } from "./telecom";
+import { computerSoftware } from "./computer-software";
+import { insurance } from "./insurance";
+import { digitalMedia } from "./digital-media";
+import { manufacturing } from "./manufacturing";
+import { federal } from "./federal";
+import { logistics } from "./logistics";
 
 /**
  * Industry registry.
@@ -23,4 +29,10 @@ export const industries: Record<string, IndustryPreset> = {
   [healthcare.id]: healthcare,
   [education.id]: education,
   [telecom.id]: telecom,
+  [computerSoftware.id]: computerSoftware,
+  [insurance.id]: insurance,
+  [digitalMedia.id]: digitalMedia,
+  [manufacturing.id]: manufacturing,
+  [federal.id]: federal,
+  [logistics.id]: logistics,
 };
