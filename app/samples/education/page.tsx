@@ -161,7 +161,7 @@ export default function EducationPage() {
           </p>
         </div>
 
-        <section>
+        <section data-testid="course-catalog">
           <div className="mb-3 flex items-center gap-2">
             <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Featured courses</h2>
             <Challenge
@@ -173,7 +173,10 @@ export default function EducationPage() {
         </section>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <section
+            data-testid="grade-chart"
+            className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <div className="mb-2 flex items-center gap-2">
               <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Grade breakdown</h2>
               <Challenge
@@ -214,7 +217,10 @@ export default function EducationPage() {
           </section>
         </div>
 
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/40">
+        <section
+          data-testid="due-countdown"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900 dark:bg-amber-950/40"
+        >
           <span className="text-sm text-amber-800 dark:text-amber-300">
             Assignment 4 due in <DueCountdown />
           </span>

@@ -13,4 +13,10 @@ export const finance: IndustryPreset = {
   ],
   checkpoints: ["Login", "Dashboard", "Transfer"],
   tags: ["finance", "auth"],
+  dynamicRegions: [
+    { selector: '[data-testid="live-clock"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="unread-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="spending-chart"]', matchLevel: "layout" },
+    { selector: '[data-testid="transactions-table"]', matchLevel: "layout" },
+  ],
 };

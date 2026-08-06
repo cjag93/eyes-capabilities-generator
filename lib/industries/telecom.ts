@@ -13,4 +13,10 @@ export const telecom: IndustryPreset = {
   ],
   checkpoints: ["Login", "Account Overview", "Plan Management", "Billing History", "Support Chat"],
   tags: ["telecom", "billing"],
+  dynamicRegions: [
+    { selector: '[data-testid="data-usage-gauge"]', matchLevel: "layout" },
+    { selector: '[data-testid="bill-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="chat-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="billing-history"]', matchLevel: "layout" },
+  ],
 };

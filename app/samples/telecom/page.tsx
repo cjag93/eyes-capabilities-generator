@@ -158,7 +158,10 @@ export default function TelecomPage() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-8">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <section className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <section
+            data-testid="data-usage-gauge"
+            className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <DataUsageGauge />
             <div>
               <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Data usage this cycle</p>
@@ -170,7 +173,10 @@ export default function TelecomPage() {
             </div>
           </section>
 
-          <section className="flex flex-col justify-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+          <section
+            data-testid="bill-countdown"
+            className="flex flex-col justify-center gap-2 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+          >
             <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Next bill</p>
             <p className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
               Due in <BillCountdown />
@@ -229,7 +235,10 @@ export default function TelecomPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <section
+          data-testid="billing-history"
+          className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950"
+        >
           <div className="mb-2 flex items-center gap-2">
             <h2 className="font-medium text-zinc-900 dark:text-zinc-50">Billing history</h2>
             <Challenge
@@ -243,6 +252,7 @@ export default function TelecomPage() {
 
       <button
         type="button"
+        data-testid="chat-badge"
         onClick={() => setToast(true)}
         className="fixed bottom-6 right-6 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-cyan-600 text-xl text-white shadow-lg hover:bg-cyan-700"
       >
