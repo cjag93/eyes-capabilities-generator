@@ -6,7 +6,7 @@ export const healthcare: IndustryPreset = {
   description: "Patient portal flows: appointments, records, billing.",
   appName: "Acme Health",
   batchName: "Healthcare Visual Regression",
-  sampleUrl: "https://demo.applitools.com",
+  sampleUrl: "http://localhost:3000/samples/healthcare",
   viewports: [
     { width: 1440, height: 900, label: "Desktop" },
     { width: 375, height: 667, label: "Mobile" },

@@ -6,7 +6,7 @@ export const telecom: IndustryPreset = {
   description: "Carrier account flows: plans, billing, support.",
   appName: "Acme Telecom",
   batchName: "Telecom Visual Regression",
-  sampleUrl: "https://demo.applitools.com",
+  sampleUrl: "http://localhost:3000/samples/telecom",
   viewports: [
     { width: 1440, height: 900, label: "Desktop" },
     { width: 375, height: 667, label: "Mobile" },

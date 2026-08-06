@@ -6,7 +6,7 @@ export const ecommerce: IndustryPreset = {
   description: "Online storefront flows: browse, cart, checkout.",
   appName: "Acme Store",
   batchName: "eCommerce Visual Regression",
-  sampleUrl: "https://demo.applitools.com",
+  sampleUrl: "http://localhost:3000/samples/ecommerce",
   viewports: [
     { width: 1440, height: 900, label: "Desktop" },
     { width: 375, height: 667, label: "Mobile" },
