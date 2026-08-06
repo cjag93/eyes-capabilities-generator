@@ -16,6 +16,8 @@ import { telecom } from "./telecom";
  *
  * See CONTRIBUTING.md ("Add an industry") for the full walkthrough.
  */
+import { healthcare } from "./healthcare";
+
 export const industries: Record<string, IndustryPreset> = {
   [finance.id]: finance,
   [ecommerce.id]: ecommerce,
