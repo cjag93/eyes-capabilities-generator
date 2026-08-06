@@ -1,4 +1,9 @@
 import type { IndustryPreset } from "../types";
+import { finance } from "./finance";
+import { ecommerce } from "./ecommerce";
+import { healthcare } from "./healthcare";
+import { education } from "./education";
+import { telecom } from "./telecom";
 
 /**
  * Industry registry.
@@ -12,8 +17,9 @@ import type { IndustryPreset } from "../types";
  * See CONTRIBUTING.md ("Add an industry") for the full walkthrough.
  */
 export const industries: Record<string, IndustryPreset> = {
-  // [ecommerce.id]: ecommerce,   <- Person D
-  // [finance.id]: finance,       <- Person D
-  // [healthcare.id]: healthcare, <- Person D
-  // [saas.id]: saas,             <- Person D
+  [finance.id]: finance,
+  [ecommerce.id]: ecommerce,
+  [healthcare.id]: healthcare,
+  [education.id]: education,
+  [telecom.id]: telecom,
 };
