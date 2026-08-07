@@ -12,10 +12,13 @@ import type { FrameworkGenerator } from "../types";
  * See CONTRIBUTING.md ("Add a framework") for the full walkthrough.
  */
 import { playwright } from "./playwright";
+import { cypress } from "./cypress";
+import { selenium } from "./selenium";
+import { webdriverio } from "./webdriverio";
 
 export const frameworks: Record<string, FrameworkGenerator> = {
   [playwright.id]: playwright,
-  // [cypress.id]: cypress,           <- Person C
-  // [selenium.id]: selenium,         <- Person C
-  // [webdriverio.id]: webdriverio,   <- Person C
+  [cypress.id]: cypress,
+  [selenium.id]: selenium,
+  [webdriverio.id]: webdriverio,
 };
