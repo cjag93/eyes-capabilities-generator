@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
+import { GeneratorWizard } from "@/components/wizard";
 
 export default function Home() {
   return (
@@ -23,20 +24,11 @@ export default function Home() {
           </p>
         </section>
 
-        {/*
-          Wizard integration point — owned by Person B.
-          Person B: replace the placeholder below with the wizard, e.g.
-              import { GeneratorWizard } from "@/components/wizard";
-              ...
-              <GeneratorWizard />
-          The wizard reads frameworks/industries from lib/engine.ts
-          (listFrameworks / listIndustries) and renders CodePreview.
-        */}
         <section
           aria-label="Snippet generator"
           className="rounded-2xl border border-border bg-surface p-6 shadow-sm sm:p-8"
         >
-          <WizardPlaceholder />
+          <GeneratorWizard />
         </section>
       </main>
 
@@ -85,23 +77,6 @@ function SiteFooter() {
         <p>Built for Applitools Eyes.</p>
       </div>
     </footer>
-  );
-}
-
-/**
- * Temporary stand-in so the shell renders and the build stays green before
- * Person B lands the wizard. Delete this once the wizard is wired in.
- */
-function WizardPlaceholder() {
-  return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-surface-muted/50 px-6 py-16 text-center">
-      <EyeMark className="h-8 w-8 text-muted-foreground" />
-      <p className="text-sm font-medium">The generator wizard mounts here</p>
-      <p className="max-w-md text-sm text-muted-foreground">
-        Industry &amp; framework pickers, options, and the copy/download code
-        preview are coming from Person B&apos;s wizard components.
-      </p>
-    </div>
   );
 }
 
