@@ -52,7 +52,7 @@ industry preset. **Adding a framework or industry never touches the engine or
 the UI.**
 
 ## Team workflow
-
+   
 - `main` is the shared baseline — branch off it, don't commit to it directly.
 - Branch naming: `feature/<name>-<short-desc>`, `fix/...`, `chore/...`.
 - Open a PR, get one review, squash-merge.

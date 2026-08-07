@@ -6,14 +6,17 @@ import type {
 } from "../types";
 
 /**
- * Playwright generator (reference implementation of the "runnable project"
- * pattern). Given an industry preset it emits a bare-minimum, runnable
- * Applitools Eyes project: config, an industry-themed sample login page, and
- * one full-window `eyes.check` test per match level (Dynamic / Exact / Layout,
- * no locators).
+ * Cypress generator. Same "runnable project" shape as `playwright.ts` — config,
+ * an industry-themed sample login page, and one full-window check per match
+ * level (Dynamic / Exact / Layout, no locators) — but built on the
+ * `@applitools/eyes-cypress` quickstart:
  *
- * It works by token-substituting small templates. Person C: copy this shape for
- * Cypress / Selenium — same file set, different SDK syntax.
+ *   - `cypress.config` is wrapped in `eyesPlugin(defineConfig({ ... }))`
+ *   - the support file imports `@applitools/eyes-cypress/commands`
+ *   - each test is `cy.eyesOpen()` -> `cy.eyesCheckWindow()` -> `cy.eyesClose()`
+ *
+ * Cypress has no built-in `webServer`, so `start-server-and-test` boots
+ * `serve.js` before the run.
  */
 
 const LEVELS: { id: MatchLevel; label: string; matchLevel: string }[] = [
@@ -38,19 +41,35 @@ function checkpointName(checkpoints: string[]): string {
 
 function testFile(
   level: (typeof LEVELS)[number],
-  ts: boolean,
+  appName: string,
+  viewport: { width: number; height: number },
   checkpoint: string,
 ): string {
-  const importLine = ts
-    ? `import { test } from "@applitools/eyes-playwright/fixture";`
-    : `const { test } = require("@applitools/eyes-playwright/fixture");`;
+  const testName = `${checkpoint} — ${level.label} match level`;
 
-  return `${importLine}
+  return `describe("${testName}", () => {
+  beforeEach(() => {
+    cy.eyesOpen({
+      appName: "${appName}",
+      testName: "${testName}",
+      browser: { width: ${viewport.width}, height: ${viewport.height} },
+    });
+  });
 
-// One checkpoint, one match level, no locators — just a full-window check.
-test("${checkpoint} — ${level.label} match level", async ({ page, eyes }) => {
-  await page.goto("/login.html");
-  await eyes.check("${checkpoint}", { fully: true, matchLevel: "${level.matchLevel}" });
+  afterEach(() => {
+    cy.eyesClose();
+  });
+
+  // One checkpoint, one match level, no locators — just a full-window check.
+  it("matches the login page", () => {
+    cy.visit("/login.html");
+    cy.eyesCheckWindow({
+      tag: "${checkpoint}",
+      target: "window",
+      fully: true,
+      matchLevel: "${level.matchLevel}",
+    });
+  });
 });
 `;
 }
@@ -102,7 +121,7 @@ const LOGIN_HTML = `<!doctype html>
         <div class="dot"></div>
         <div>
           <h1>{{APP_NAME}}</h1>
-          <span>{{INDUSTRY_LABEL}} patient portal</span>
+          <span>{{INDUSTRY_LABEL}} portal</span>
         </div>
       </div>
       <form onsubmit="return false">
@@ -112,7 +131,7 @@ const LOGIN_HTML = `<!doctype html>
         <input id="password" type="password" placeholder="••••••••" />
         <button type="submit">Sign in</button>
       </form>
-      <p class="foot">Protected health information — authorized access only.</p>
+      <p class="foot">Authorized access only — demo page for visual testing.</p>
     </main>
   </body>
 </html>
@@ -145,23 +164,24 @@ http
   .listen(port, () => console.log("Serving pages/ on http://localhost:" + port));
 `;
 
-const README = `# {{APP_NAME}} — Applitools Eyes starter (Playwright)
+const README = `# {{APP_NAME}} — Applitools Eyes starter (Cypress)
 
 A minimal, runnable Applitools Eyes project for the {{INDUSTRY_LABEL}} login
 page. It runs the **same** page through three visual checkpoints — one per
 match level — so you can see how each behaves:
 
-- \`tests/login.dynamic.spec\` — **Dynamic** match level
-- \`tests/login.exact.spec\` — **Exact** match level
-- \`tests/login.layout.spec\` — **Layout** match level
+- \`cypress/e2e/login.dynamic.cy.{{EXT}}\` — **Dynamic** match level
+- \`cypress/e2e/login.exact.cy.{{EXT}}\` — **Exact** match level
+- \`cypress/e2e/login.layout.cy.{{EXT}}\` — **Layout** match level
 
-Each test does one full-window \`eyes.check\` — no locators.
+Each test is the standard Eyes Cypress trio — \`cy.eyesOpen\`,
+\`cy.eyesCheckWindow\`, \`cy.eyesClose\` — with one full-window check and no
+locators.
 
 ## 1. Install
 
 \`\`\`bash
 npm install
-npx playwright install chromium
 \`\`\`
 
 ## 2. Add your Applitools API key
@@ -179,15 +199,23 @@ Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 npm test
 \`\`\`
 
-The test server (\`serve.js\`) serves \`pages/login.html\` locally, so everything
+\`start-server-and-test\` boots \`serve.js\` (which serves \`pages/login.html\` on
+port 8080), runs Cypress headlessly, then shuts the server down — so everything
 runs with no external dependencies.
+
+To open the Cypress runner interactively instead:
+
+\`\`\`bash
+npm start          # in one terminal
+npm run cy:open    # in another
+\`\`\`
 `;
 
-export const playwright: FrameworkGenerator = {
-  id: "playwright",
-  label: "Playwright",
+export const cypress: FrameworkGenerator = {
+  id: "cypress",
+  label: "Cypress",
   supportedLanguages: ["javascript", "typescript"],
-  generate({ language, industry }: GeneratorOptions) {
+  generate({ language, useUltrafastGrid, industry }: GeneratorOptions) {
     const ts = language === "typescript";
     const ext = ts ? "ts" : "js";
     const vars = {
@@ -195,57 +223,97 @@ export const playwright: FrameworkGenerator = {
       BATCH_NAME: industry.batchName,
       INDUSTRY_LABEL: industry.label,
       PROJECT_SLUG: industry.id,
+      EXT: ext,
     };
     const checkpoint = checkpointName(industry.checkpoints);
 
+    const viewports = industry.viewports.length
+      ? industry.viewports
+      : [{ width: 1440, height: 900 }];
+    const primaryViewport = viewports[0];
+
     const packageJson = JSON.stringify(
       {
-        name: `${vars.PROJECT_SLUG}-eyes-playwright`,
+        name: `${vars.PROJECT_SLUG}-eyes-cypress`,
         version: "1.0.0",
         private: true,
-        scripts: { test: "playwright test" },
+        scripts: {
+          start: "node serve.js",
+          "cy:open": "cypress open",
+          "cy:run": "cypress run",
+          test: "start-server-and-test start http://localhost:8080/login.html cy:run",
+        },
         devDependencies: {
-          "@applitools/eyes-playwright": "^1.34.0",
-          "@playwright/test": "^1.49.0",
+          "@applitools/eyes-cypress": "^3.44.0",
+          cypress: "^13.15.0",
           dotenv: "^16.4.0",
+          "start-server-and-test": "^2.0.0",
         },
       },
       null,
       2,
     );
 
-    const playwrightConfig = ts
+    const cypressConfig = ts
       ? `import "dotenv/config";
-import { defineConfig } from "@playwright/test";
+import { defineConfig } from "cypress";
+import eyesPlugin from "@applitools/eyes-cypress";
 
-export default defineConfig({
-  testDir: "./tests",
-  use: { baseURL: "http://localhost:8080" },
-  webServer: {
-    command: "node serve.js",
-    url: "http://localhost:8080/login.html",
-    reuseExistingServer: !process.env.CI,
-  },
-});
+export default eyesPlugin(
+  defineConfig({
+    e2e: {
+      baseUrl: "http://localhost:8080",
+      supportFile: "cypress/support/e2e.ts",
+      specPattern: "cypress/e2e/**/*.cy.ts",
+      video: false,
+      setupNodeEvents(on, config) {
+        return config;
+      },
+    },
+  }),
+);
 `
       : `require("dotenv").config();
-const { defineConfig } = require("@playwright/test");
+const { defineConfig } = require("cypress");
+const eyesPlugin = require("@applitools/eyes-cypress");
 
-module.exports = defineConfig({
-  testDir: "./tests",
-  use: { baseURL: "http://localhost:8080" },
-  webServer: {
-    command: "node serve.js",
-    url: "http://localhost:8080/login.html",
-    reuseExistingServer: !process.env.CI,
-  },
-});
+module.exports = eyesPlugin(
+  defineConfig({
+    e2e: {
+      baseUrl: "http://localhost:8080",
+      supportFile: "cypress/support/e2e.js",
+      specPattern: "cypress/e2e/**/*.cy.js",
+      video: false,
+      setupNodeEvents(on, config) {
+        return config;
+      },
+    },
+  }),
+);
 `;
+
+    // Registers cy.eyesOpen / cy.eyesCheckWindow / cy.eyesClose.
+    const supportFile = `import "@applitools/eyes-cypress/commands";
+`;
+
+    const browserConfig = useUltrafastGrid
+      ? `[
+${viewports
+  .map(
+    (v) =>
+      `    { width: ${v.width}, height: ${v.height}, name: "chrome" },
+    { width: ${v.width}, height: ${v.height}, name: "firefox" },`,
+  )
+  .join("\n")}
+    { deviceName: "iPhone X" },
+  ]`
+      : `{ width: ${primaryViewport.width}, height: ${primaryViewport.height}, name: "chrome" }`;
 
     const applitoolsConfig = `// Applitools reads APPLITOOLS_API_KEY from the environment (.env).
 module.exports = {
   appName: "${vars.APP_NAME}",
-  batch: { name: "${vars.BATCH_NAME}" },
+  batchName: "${vars.BATCH_NAME}",
+  browser: ${browserConfig},
 };
 `;
 
@@ -255,17 +323,29 @@ APPLITOOLS_API_KEY=
 
     const gitignore = `node_modules/
 .env
-test-results/
-playwright-report/
+cypress/screenshots/
+cypress/videos/
 `;
+
+    const tsconfig = JSON.stringify(
+      {
+        compilerOptions: {
+          target: "es2018",
+          lib: ["es2018", "dom"],
+          types: ["cypress", "@applitools/eyes-cypress"],
+          esModuleInterop: true,
+          skipLibCheck: true,
+          noEmit: true,
+        },
+        include: ["**/*.ts"],
+      },
+      null,
+      2,
+    );
 
     const files: ProjectFile[] = [
       { path: "package.json", contents: packageJson, language: "json" },
-      {
-        path: `playwright.config.${ext}`,
-        contents: playwrightConfig,
-        language,
-      },
+      { path: `cypress.config.${ext}`, contents: cypressConfig, language },
       {
         path: "applitools.config.js",
         contents: applitoolsConfig,
@@ -277,11 +357,25 @@ playwright-report/
         contents: render(LOGIN_HTML, vars),
         language: "html",
       },
+      {
+        path: `cypress/support/e2e.${ext}`,
+        contents: supportFile,
+        language,
+      },
       ...LEVELS.map((level) => ({
-        path: `tests/login.${level.id}.spec.${ext}`,
-        contents: testFile(level, ts, checkpoint),
+        path: `cypress/e2e/login.${level.id}.cy.${ext}`,
+        contents: testFile(level, vars.APP_NAME, primaryViewport, checkpoint),
         language,
       })),
+      ...(ts
+        ? [
+            {
+              path: "cypress/tsconfig.json",
+              contents: tsconfig,
+              language: "json" as const,
+            },
+          ]
+        : []),
       { path: ".env.example", contents: envExample, language: "env" },
       { path: ".gitignore", contents: gitignore, language: "text" },
       { path: "README.md", contents: render(README, vars), language: "markdown" },
@@ -289,9 +383,9 @@ playwright-report/
 
     const primary = LEVELS[2]; // Layout, as the preview snippet.
     return {
-      filename: `tests/login.${primary.id}.spec.${ext}`,
+      filename: `cypress/e2e/login.${primary.id}.cy.${ext}`,
       language,
-      code: testFile(primary, ts, checkpoint),
+      code: testFile(primary, vars.APP_NAME, primaryViewport, checkpoint),
       files,
     };
   },
