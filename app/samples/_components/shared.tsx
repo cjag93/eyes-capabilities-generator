@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 /**
@@ -37,7 +38,7 @@ export function StatCard({
   hint,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
 }) {
   return (

@@ -7,6 +7,12 @@ const ICONS: Record<string, string> = {
   healthcare: "➕",
   education: "🎓",
   telecom: "📶",
+  "computer-software": "💻",
+  insurance: "🛡️",
+  "digital-media": "🎬",
+  manufacturing: "🏭",
+  federal: "🏛️",
+  logistics: "🚚",
 };
 
 export default function SamplesIndexPage() {
