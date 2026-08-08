@@ -1,6 +1,8 @@
 import type {
   FrameworkGenerator,
   GeneratorOptions,
+  IndustryPreset,
+  IndustryRegion,
   MatchLevel,
   ProjectFile,
   Viewport,
@@ -8,9 +10,10 @@ import type {
 
 /**
  * WebdriverIO generator. Same "runnable project" shape as `playwright.ts`,
- * `cypress.ts`, and `selenium.ts` — config, an industry-themed sample login
- * page, and one full-window check per match level (Dynamic / Exact / Layout, no
- * locators) — built on the `@applitools/eyes-webdriverio` quickstart.
+ * `cypress.ts`, and `selenium.ts` — config, a launcher for the industry's
+ * sample app, and one full-window check per match level (Dynamic / Exact /
+ * Layout, no locators) — built on the `@applitools/eyes-webdriverio`
+ * quickstart.
  *
  * Note this SDK is *not* wired in as a WDIO service: the quickstart uses the
  * `Eyes` class directly inside the spec, driving WDIO's global `browser`:
@@ -22,7 +25,8 @@ import type {
  *   - `eyes.closeAsync()` per test, `runner.getAllTestResults()` at the end
  *
  * Mocha is the test framework (WDIO's default, matching Applitools' official
- * example), and `start-server-and-test` boots `serve.js`.
+ * example), and `start-server-and-test` boots the sample app when the preset
+ * points at a local one.
  */
 
 const LEVELS: { id: MatchLevel; label: string; matchLevel: string }[] = [
@@ -43,6 +47,71 @@ function jsString(value: string): string {
 /** The industry's first checkpoint names the single check these tests take. */
 function checkpointName(checkpoints: string[]): string {
   return jsString(checkpoints[0] ?? "Login");
+}
+
+/**
+ * Where the generated test navigates, and whether the project has to boot the
+ * sample app itself. Presets with a real sample page under `app/samples/*`
+ * point at this repo's dev server; catalog-only presets point at a public demo
+ * URL, so there is nothing to start.
+ */
+interface SampleTarget {
+  url: string;
+  origin: string;
+  path: string;
+  isLocal: boolean;
+}
+
+function sampleTarget(industry: IndustryPreset): SampleTarget {
+  try {
+    const parsed = new URL(industry.sampleUrl);
+    return {
+      url: industry.sampleUrl,
+      origin: parsed.origin,
+      path: `${parsed.pathname}${parsed.search}`,
+      isLocal: parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1",
+    };
+  } catch {
+    return {
+      url: industry.sampleUrl,
+      origin: industry.sampleUrl,
+      path: "/",
+      isLocal: false,
+    };
+  }
+}
+
+/**
+ * Eyes region bucket for each preset match level. There is no "exact" region
+ * type, so exact falls back to `strictRegions` — the nearest region-level
+ * equivalent.
+ */
+const REGION_KEYS: Record<MatchLevel, string> = {
+  dynamic: "dynamicRegions",
+  layout: "layoutRegions",
+  exact: "strictRegions",
+};
+
+/**
+ * The fluent region calls to append to `Target.window()`, one per Eyes region
+ * bucket, preserving the order the preset lists them in.
+ */
+function regionCalls(regions: IndustryRegion[] = []): string {
+  const grouped = new Map<string, string[]>();
+  for (const region of regions) {
+    const key = REGION_KEYS[region.matchLevel];
+    if (!key) continue;
+    grouped.set(key, [...(grouped.get(key) ?? []), region.selector]);
+  }
+
+  return [...grouped]
+    .map(
+      ([key, selectors]) => `
+        .${key}(
+${selectors.map((s) => `          "${jsString(s)}",`).join("\n")}
+        )`,
+    )
+    .join("");
 }
 
 /** Ultrafast Grid browser matrix, derived from the industry's viewports. */
@@ -66,13 +135,23 @@ function testFile(
     appName: string;
     batchName: string;
     checkpoint: string;
+    target: SampleTarget;
+    regions?: IndustryRegion[];
     viewport: Viewport;
     viewports: Viewport[];
     useUltrafastGrid: boolean;
   },
 ): string {
-  const { appName, batchName, checkpoint, viewport, viewports, useUltrafastGrid } =
-    opts;
+  const {
+    appName,
+    batchName,
+    checkpoint,
+    target,
+    regions,
+    viewport,
+    viewports,
+    useUltrafastGrid,
+  } = opts;
   const testName = `${checkpoint} — ${level.label} match level`;
 
   const imports = ts
@@ -117,6 +196,9 @@ function testFile(
 // locally; when false, a ClassicRunner captures on this machine only.
 const USE_ULTRAFAST_GRID = ${useUltrafastGrid};
 
+// Resolved against wdio.conf's baseUrl (${jsString(target.origin)}).
+const SAMPLE_PATH = "${jsString(target.path)}";
+
 describe("${testName}", () => {
 ${decls}
 
@@ -149,14 +231,16 @@ ${gridBrowsers(viewports)}
   });
 
   // One checkpoint, one match level, no locators — just a full-window check.
-  it("matches the login page", async () => {
-    await browser.url("/login.html");
+  // The region calls cover elements that legitimately drift between runs
+  // (live clocks, async-loaded charts, counters).
+  it("matches the sample page", async () => {
+    await browser.url(SAMPLE_PATH);
 
     await eyes.check(
       Target.window()
         .fully()
         .withName("${checkpoint}")
-        .matchLevel("${level.matchLevel}"),
+        .matchLevel("${level.matchLevel}")${regionCalls(regions)},
     );
   });
 
@@ -174,105 +258,47 @@ ${gridBrowsers(viewports)}
 `;
 }
 
-const LOGIN_HTML = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{APP_NAME}} — Sign in</title>
-    <style>
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        min-height: 100vh;
-        display: grid;
-        place-items: center;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-        background: #eef4f8;
-        color: #0f2233;
-      }
-      .card {
-        width: 360px;
-        padding: 32px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(15, 34, 51, 0.08);
-      }
-      .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-      .brand .dot { width: 28px; height: 28px; border-radius: 8px; background: #0b8f6a; }
-      .brand h1 { font-size: 18px; margin: 0; }
-      .brand span { display: block; font-size: 12px; color: #5b7385; font-weight: 500; }
-      label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 6px; }
-      input {
-        width: 100%; padding: 10px 12px; border: 1px solid #d5e0e8;
-        border-radius: 10px; font-size: 14px;
-      }
-      button {
-        margin-top: 24px; width: 100%; padding: 11px; border: 0;
-        border-radius: 10px; background: #0b8f6a; color: #fff;
-        font-size: 15px; font-weight: 600; cursor: pointer;
-      }
-      .foot { margin-top: 16px; text-align: center; font-size: 12px; color: #5b7385; }
-    </style>
-  </head>
-  <body>
-    <main class="card">
-      <div class="brand">
-        <div class="dot"></div>
-        <div>
-          <h1>{{APP_NAME}}</h1>
-          <span>{{INDUSTRY_LABEL}} portal</span>
-        </div>
-      </div>
-      <form onsubmit="return false">
-        <label for="email">Email</label>
-        <input id="email" type="email" placeholder="you@example.com" />
-        <label for="password">Password</label>
-        <input id="password" type="password" placeholder="••••••••" />
-        <button type="submit">Sign in</button>
-      </form>
-      <p class="foot">Authorized access only — demo page for visual testing.</p>
-    </main>
-  </body>
-</html>
-`;
-
-const SERVE_JS = `const http = require("http");
-const fs = require("fs");
+/**
+ * Boots this repo's Next.js dev server so the sample page is reachable. Only
+ * emitted for presets whose sampleUrl is local.
+ */
+const SAMPLE_APP_JS = `// Starts the {{INDUSTRY_LABEL}} sample app that serves {{SAMPLE_URL}}.
+// The sample page lives in the eyes-capabilities-generator repo, so point
+// SAMPLE_APP_DIR at your checkout if it is not in the default location.
+const { spawn } = require("child_process");
 const path = require("path");
 
-const root = path.join(__dirname, "pages");
-const port = 8080;
-const types = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript" };
+const appDir = path.resolve(
+  process.env.SAMPLE_APP_DIR || path.join("..", "eyes-capabilities-generator"),
+);
 
-http
-  .createServer((req, res) => {
-    const urlPath = req.url === "/" ? "/login.html" : req.url.split("?")[0];
-    const file = path.join(root, path.normalize(urlPath));
-    fs.readFile(file, (err, data) => {
-      if (err) {
-        res.writeHead(404);
-        res.end("Not found");
-        return;
-      }
-      res.writeHead(200, {
-        "Content-Type": types[path.extname(file)] || "application/octet-stream",
-      });
-      res.end(data);
-    });
-  })
-  .listen(port, () => console.log("Serving pages/ on http://localhost:" + port));
+console.log("Starting the {{INDUSTRY_LABEL}} sample app from " + appDir);
+
+const child = spawn("npm", ["run", "dev"], {
+  cwd: appDir,
+  stdio: "inherit",
+  shell: process.platform === "win32",
+});
+
+child.on("error", (error) => {
+  console.error("Could not start the sample app from " + appDir);
+  console.error("Set SAMPLE_APP_DIR to your eyes-capabilities-generator checkout.");
+  console.error(error.message);
+  process.exit(1);
+});
+
+child.on("exit", (code) => process.exit(code === null ? 1 : code));
 `;
 
 const README = `# {{APP_NAME}} — Applitools Eyes starter (WebdriverIO)
 
-A minimal, runnable Applitools Eyes project for the {{INDUSTRY_LABEL}} login
-page. It runs the **same** page through three visual checkpoints — one per
-match level — so you can see how each behaves:
+A minimal, runnable Applitools Eyes project pointed at the {{INDUSTRY_LABEL}}
+sample page ({{SAMPLE_URL}}). It runs the **same** page through three visual
+checkpoints — one per match level — so you can see how each behaves:
 
-- \`test/login.dynamic.test.{{EXT}}\` — **Dynamic** match level
-- \`test/login.exact.test.{{EXT}}\` — **Exact** match level
-- \`test/login.layout.test.{{EXT}}\` — **Layout** match level
+- \`test/{{PROJECT_SLUG}}.dynamic.test.{{EXT}}\` — **Dynamic** match level
+- \`test/{{PROJECT_SLUG}}.exact.test.{{EXT}}\` — **Exact** match level
+- \`test/{{PROJECT_SLUG}}.layout.test.{{EXT}}\` — **Layout** match level
 
 Each test is the standard Eyes WebdriverIO flow — a shared runner, then
 \`eyes.open\` / \`eyes.check(Target.window().fully()...)\` / \`eyes.closeAsync\`,
@@ -295,22 +321,45 @@ cp .env.example .env
 
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
-## 3. Run
-
-\`\`\`bash
-npm test
-\`\`\`
-
-\`start-server-and-test\` boots \`serve.js\` (which serves \`pages/login.html\` on
-port 8080), runs the WDIO suite, then shuts the server down — so everything
-runs with no external dependencies.
-
+{{RUN_SECTION}}
 ## Ultrafast Grid
 
 Each spec has a \`USE_ULTRAFAST_GRID\` constant at the top. When true, the
 checkpoint is rendered across every browser added via \`config.addBrowser(...)\`
 without launching them locally. When false, a \`ClassicRunner\` captures on this
 machine only.
+`;
+
+const RUN_LOCAL = `## 3. Point at the sample app
+
+The {{INDUSTRY_LABEL}} sample page is served by the
+\`eyes-capabilities-generator\` repo. \`sample-app.js\` starts it for you, but it
+needs to know where the repo is. It defaults to
+\`../eyes-capabilities-generator\`; override it in \`.env\`:
+
+\`\`\`bash
+SAMPLE_APP_DIR=/path/to/eyes-capabilities-generator
+\`\`\`
+
+## 4. Run
+
+\`\`\`bash
+npm test
+\`\`\`
+
+\`start-server-and-test\` boots the sample app, waits for {{SAMPLE_URL}}, runs
+the WDIO suite, then shuts the server down.
+
+`;
+
+const RUN_REMOTE = `## 3. Run
+
+\`\`\`bash
+npm test
+\`\`\`
+
+The tests hit {{SAMPLE_URL}} directly, so there is nothing to start locally.
+
 `;
 
 export const webdriverio: FrameworkGenerator = {
@@ -320,12 +369,20 @@ export const webdriverio: FrameworkGenerator = {
   generate({ language, useUltrafastGrid, industry }: GeneratorOptions) {
     const ts = language === "typescript";
     const ext = ts ? "ts" : "js";
-    const vars = {
+    const target = sampleTarget(industry);
+    const baseVars = {
       APP_NAME: industry.appName,
       BATCH_NAME: industry.batchName,
       INDUSTRY_LABEL: industry.label,
       PROJECT_SLUG: industry.id,
+      SAMPLE_URL: target.url,
       EXT: ext,
+    };
+    // The run section carries its own tokens, so resolve it before it is
+    // spliced into the README (render() is single-pass).
+    const vars = {
+      ...baseVars,
+      RUN_SECTION: render(target.isLocal ? RUN_LOCAL : RUN_REMOTE, baseVars),
     };
 
     const viewports = industry.viewports.length
@@ -337,6 +394,8 @@ export const webdriverio: FrameworkGenerator = {
       appName: vars.APP_NAME,
       batchName: vars.BATCH_NAME,
       checkpoint: checkpointName(industry.checkpoints),
+      target,
+      regions: industry.dynamicRegions,
       viewport: primaryViewport,
       viewports,
       useUltrafastGrid,
@@ -348,9 +407,11 @@ export const webdriverio: FrameworkGenerator = {
         version: "1.0.0",
         private: true,
         scripts: {
-          start: "node serve.js",
+          ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           wdio: "wdio run ./wdio.conf." + ext,
-          test: "start-server-and-test start http://localhost:8080/login.html wdio",
+          test: target.isLocal
+            ? `start-server-and-test start:sample ${target.url} wdio`
+            : "wdio run ./wdio.conf." + ext,
         },
         devDependencies: {
           "@applitools/eyes-webdriverio": "^5.61.0",
@@ -359,7 +420,7 @@ export const webdriverio: FrameworkGenerator = {
           "@wdio/mocha-framework": "^9.0.0",
           "@wdio/spec-reporter": "^9.0.0",
           dotenv: "^16.4.0",
-          "start-server-and-test": "^2.0.0",
+          ...(target.isLocal ? { "start-server-and-test": "^2.0.0" } : {}),
           ...(ts
             ? {
                 "@types/mocha": "^10.0.0",
@@ -393,7 +454,7 @@ export const config: WebdriverIO.Config = {
   maxInstances: 1,
   capabilities: ${capabilities},
   logLevel: "error",
-  baseUrl: "http://localhost:8080",
+  baseUrl: "${target.origin}",
   waitforTimeout: 10000,
   framework: "mocha",
   reporters: ["spec"],
@@ -418,7 +479,7 @@ exports.config = {
   maxInstances: 1,
   capabilities: ${capabilities},
   logLevel: "error",
-  baseUrl: "http://localhost:8080",
+  baseUrl: "${target.origin}",
   waitforTimeout: 10000,
   framework: "mocha",
   reporters: ["spec"],
@@ -454,7 +515,15 @@ exports.config = {
 
     const envExample = `# Get your key from https://eyes.applitools.com (Account settings).
 APPLITOOLS_API_KEY=
-`;
+${
+  target.isLocal
+    ? `
+# Where the eyes-capabilities-generator repo lives, so sample-app.js can serve
+# ${target.url}. Defaults to ../eyes-capabilities-generator.
+SAMPLE_APP_DIR=
+`
+    : ""
+}`;
 
     const gitignore = `node_modules/
 .env
@@ -464,14 +533,17 @@ logs/
     const files: ProjectFile[] = [
       { path: "package.json", contents: packageJson, language: "json" },
       { path: `wdio.conf.${ext}`, contents: wdioConfig, language },
-      { path: "serve.js", contents: SERVE_JS, language: "javascript" },
-      {
-        path: "pages/login.html",
-        contents: render(LOGIN_HTML, vars),
-        language: "html",
-      },
+      ...(target.isLocal
+        ? [
+            {
+              path: "sample-app.js",
+              contents: render(SAMPLE_APP_JS, vars),
+              language: "javascript" as const,
+            },
+          ]
+        : []),
       ...LEVELS.map((level) => ({
-        path: `test/login.${level.id}.test.${ext}`,
+        path: `test/${vars.PROJECT_SLUG}.${level.id}.test.${ext}`,
         contents: testFile(level, ts, testOpts),
         language,
       })),
@@ -491,7 +563,7 @@ logs/
 
     const primary = LEVELS[2]; // Layout, as the preview snippet.
     return {
-      filename: `test/login.${primary.id}.test.${ext}`,
+      filename: `test/${vars.PROJECT_SLUG}.${primary.id}.test.${ext}`,
       language,
       code: testFile(primary, ts, testOpts),
       files,
