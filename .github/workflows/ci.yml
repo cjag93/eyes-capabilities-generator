@@ -28,6 +28,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # lib/sample-app.generated.ts is a checked-in snapshot of app/samples/**,
+      # bundled into every downloaded project. Fail if it drifts from source.
+      - name: Check bundled sample app is up to date
+        run: |
+          npm run generate:sample-app
+          git diff --exit-code -- lib/sample-app.generated.ts \
+            || { echo "::error::lib/sample-app.generated.ts is stale — run 'npm run generate:sample-app' and commit the result."; exit 1; }
+
       - name: Lint
         run: npm run lint
 
