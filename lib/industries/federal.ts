@@ -14,8 +14,8 @@ export const federal: IndustryPreset = {
   checkpoints: ["Login", "Application Form", "Benefits Status", "Documents"],
   tags: ["federal", "government", "compliance"],
   dynamicRegions: [
-    { selector: '[data-testid="session-countdown"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="correspondence-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="session-countdown"]', matchLevel: "layout" },
+    { selector: '[data-testid="correspondence-badge"]', matchLevel: "layout" },
     { selector: '[data-testid="application-progress"]', matchLevel: "layout" },
     { selector: '[data-testid="benefits-chart"]', matchLevel: "layout" },
     { selector: '[data-testid="documents-list"]', matchLevel: "layout" },

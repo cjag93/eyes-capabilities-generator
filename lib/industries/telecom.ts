@@ -15,8 +15,8 @@ export const telecom: IndustryPreset = {
   tags: ["telecom", "billing"],
   dynamicRegions: [
     { selector: '[data-testid="data-usage-gauge"]', matchLevel: "layout" },
-    { selector: '[data-testid="bill-countdown"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="chat-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="bill-countdown"]', matchLevel: "layout" },
+    { selector: '[data-testid="chat-badge"]', matchLevel: "layout" },
     { selector: '[data-testid="billing-history"]', matchLevel: "layout" },
   ],
 };

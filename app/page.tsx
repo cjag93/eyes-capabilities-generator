@@ -66,15 +66,35 @@ function SiteHeader() {
 function SiteFooter() {
   return (
     <footer className="border-t border-border">
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-start justify-between gap-2 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:px-8">
-        <p>
-          Snippets reference{" "}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-6 text-sm text-muted-foreground sm:px-8">
+        <p className="max-w-3xl text-pretty leading-6">
+          Generated projects are for evaluation and getting started with
+          Applitools Eyes. Keep API keys in{" "}
           <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.85em]">
-            APPLITOOLS_API_KEY
+            .env
           </code>{" "}
-          from your environment — never hard-code secrets.
+          — never hard-code secrets. Applitools takes security seriously; learn
+          more in our{" "}
+          <a
+            href="https://trust.applitools.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Security Trust Center
+          </a>
+          .
         </p>
-        <p>Built for Applitools Eyes.</p>
+        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+          <p>
+            Snippets reference{" "}
+            <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.85em]">
+              APPLITOOLS_API_KEY
+            </code>{" "}
+            from your environment.
+          </p>
+          <p>Built for Applitools Eyes.</p>
+        </div>
       </div>
     </footer>
   );

@@ -12,7 +12,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
 /**
  * Selenium (JavaScript / TypeScript) generator. Same "runnable project" shape
  * as `playwright.ts` and `cypress.ts` — config, a launcher for the industry's
- * sample app, and one full-window check per match level (Dynamic / Exact /
+ * sample app, and one full-window check per match level (Strict / Exact /
  * Layout, no locators) — built on the `@applitools/eyes-selenium` quickstart:
  *
  *   - a `ClassicRunner` or `VisualGridRunner` shared by the suite
@@ -27,7 +27,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  */
 
 const LEVELS: { id: MatchLevel; label: string; matchLevel: string }[] = [
-  { id: "dynamic", label: "Dynamic", matchLevel: "Dynamic" },
+  { id: "strict", label: "Strict", matchLevel: "Strict" },
   { id: "exact", label: "Exact", matchLevel: "Exact" },
   { id: "layout", label: "Layout", matchLevel: "Layout" },
 ];
@@ -84,7 +84,7 @@ function sampleTarget(industry: IndustryPreset): SampleTarget {
  * equivalent.
  */
 const REGION_KEYS: Record<MatchLevel, string> = {
-  dynamic: "dynamicRegions",
+  strict: "strictRegions",
   layout: "layoutRegions",
   exact: "strictRegions",
 };
@@ -111,18 +111,11 @@ ${selectors.map((s) => `          "${jsString(s)}",`).join("\n")}
     .join("");
 }
 
-/** Ultrafast Grid browser matrix, derived from the industry's viewports. */
-function gridBrowsers(viewports: Viewport[]): string {
-  const desktop = viewports
-    .map(
-      (v) =>
-        `      config.addBrowser(${v.width}, ${v.height}, BrowserType.CHROME);
-      config.addBrowser(${v.width}, ${v.height}, BrowserType.FIREFOX);`,
-    )
-    .join("\n");
-
-  return `${desktop}
-      config.addDeviceEmulation(DeviceName.Pixel_2, ScreenOrientation.PORTRAIT);`;
+/** Ultrafast Grid browser matrix — Chrome, Firefox, and Safari on the primary viewport. */
+function gridBrowsers(viewport: Viewport): string {
+  return `      config.addBrowser(${viewport.width}, ${viewport.height}, BrowserType.CHROME);
+      config.addBrowser(${viewport.width}, ${viewport.height}, BrowserType.FIREFOX);
+      config.addBrowser(${viewport.width}, ${viewport.height}, BrowserType.SAFARI);`;
 }
 
 function testFile(
@@ -135,7 +128,6 @@ function testFile(
     target: SampleTarget;
     regions?: IndustryRegion[];
     viewport: Viewport;
-    viewports: Viewport[];
     useUltrafastGrid: boolean;
   },
 ): string {
@@ -146,7 +138,6 @@ function testFile(
     target,
     regions,
     viewport,
-    viewports,
     useUltrafastGrid,
   } = opts;
   const testName = `${checkpoint} — ${level.label} match level`;
@@ -159,12 +150,10 @@ import {
   BrowserType,
   ClassicRunner,
   Configuration,
-  DeviceName,
   Eyes,
   EyesRunner,
   RectangleSize,
   RunnerOptions,
-  ScreenOrientation,
   Target,
   VisualGridRunner,
 } from "@applitools/eyes-selenium";`
@@ -175,11 +164,9 @@ const {
   BrowserType,
   ClassicRunner,
   Configuration,
-  DeviceName,
   Eyes,
   RectangleSize,
   RunnerOptions,
-  ScreenOrientation,
   Target,
   VisualGridRunner,
 } = require("@applitools/eyes-selenium");`;
@@ -223,7 +210,7 @@ ${decls}
     config.setBatch(new BatchInfo("${batchName}"));
 
     if (USE_ULTRAFAST_GRID) {
-${gridBrowsers(viewports)}
+${gridBrowsers(viewport)}
     }
 
     eyes = new Eyes(runner);
@@ -317,7 +304,7 @@ A minimal, runnable Applitools Eyes project pointed at the {{INDUSTRY_LABEL}}
 sample page ({{SAMPLE_URL}}). It runs the **same** page through three visual
 checkpoints — one per match level — so you can see how each behaves:
 
-- \`tests/{{PROJECT_SLUG}}.dynamic.test.{{EXT}}\` — **Dynamic** match level
+- \`tests/{{PROJECT_SLUG}}.strict.test.{{EXT}}\` — **Strict** match level
 - \`tests/{{PROJECT_SLUG}}.exact.test.{{EXT}}\` — **Exact** match level
 - \`tests/{{PROJECT_SLUG}}.layout.test.{{EXT}}\` — **Layout** match level
 
@@ -420,7 +407,6 @@ export const selenium: FrameworkGenerator = {
       target,
       regions: industry.dynamicRegions,
       viewport: primaryViewport,
-      viewports,
       useUltrafastGrid,
     };
 

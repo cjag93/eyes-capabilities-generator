@@ -14,8 +14,8 @@ export const logistics: IndustryPreset = {
   checkpoints: ["Dashboard", "Shipment Tracking", "Dispatch", "Warehouse"],
   tags: ["logistics", "supply-chain"],
   dynamicRegions: [
-    { selector: '[data-testid="alerts-badge"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="eta-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="alerts-badge"]', matchLevel: "layout" },
+    { selector: '[data-testid="eta-countdown"]', matchLevel: "layout" },
     { selector: '[data-testid="fleet-chart"]', matchLevel: "layout" },
     { selector: '[data-testid="warehouse-gauge"]', matchLevel: "layout" },
     { selector: '[data-testid="dispatch-queue"]', matchLevel: "layout" },

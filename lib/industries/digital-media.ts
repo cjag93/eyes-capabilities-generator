@@ -14,9 +14,9 @@ export const digitalMedia: IndustryPreset = {
   checkpoints: ["Home", "Content Detail", "Player", "Subscription"],
   tags: ["media", "streaming"],
   dynamicRegions: [
-    { selector: '[data-testid="episodes-badge"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="player-progress"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="subscription-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="episodes-badge"]', matchLevel: "layout" },
+    { selector: '[data-testid="player-progress"]', matchLevel: "layout" },
+    { selector: '[data-testid="subscription-countdown"]', matchLevel: "layout" },
     { selector: '[data-testid="featured-carousel"]', matchLevel: "layout" },
     { selector: '[data-testid="trending-chart"]', matchLevel: "layout" },
     { selector: '[data-testid="content-grid"]', matchLevel: "layout" },

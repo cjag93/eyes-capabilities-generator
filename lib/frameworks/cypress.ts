@@ -11,7 +11,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
 /**
  * Cypress generator. Same "runnable project" shape as `playwright.ts` — config,
  * a launcher for the industry's sample app, and one full-window check per match
- * level (Dynamic / Exact / Layout, no locators) — but built on the
+ * level (Strict / Exact / Layout, no locators) — but built on the
  * `@applitools/eyes-cypress` quickstart:
  *
  *   - `cypress.config` is wrapped in `eyesPlugin(defineConfig({ ... }))`
@@ -23,7 +23,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  */
 
 const LEVELS: { id: MatchLevel; label: string; matchLevel: string }[] = [
-  { id: "dynamic", label: "Dynamic", matchLevel: "Dynamic" },
+  { id: "strict", label: "Strict", matchLevel: "Strict" },
   { id: "exact", label: "Exact", matchLevel: "Exact" },
   { id: "layout", label: "Layout", matchLevel: "Layout" },
 ];
@@ -48,7 +48,7 @@ function checkpointName(checkpoints: string[]): string {
  * equivalent.
  */
 const REGION_KEYS: Record<MatchLevel, string> = {
-  dynamic: "dynamicRegions",
+  strict: "strictRegions",
   layout: "layoutRegions",
   exact: "strictRegions",
 };
@@ -198,7 +198,7 @@ A minimal, runnable Applitools Eyes project pointed at the {{INDUSTRY_LABEL}}
 sample page ({{SAMPLE_URL}}). It runs the **same** page through three visual
 checkpoints — one per match level — so you can see how each behaves:
 
-- \`cypress/e2e/{{PROJECT_SLUG}}.dynamic.cy.{{EXT}}\` — **Dynamic** match level
+- \`cypress/e2e/{{PROJECT_SLUG}}.strict.cy.{{EXT}}\` — **Strict** match level
 - \`cypress/e2e/{{PROJECT_SLUG}}.exact.cy.{{EXT}}\` — **Exact** match level
 - \`cypress/e2e/{{PROJECT_SLUG}}.layout.cy.{{EXT}}\` — **Layout** match level
 
@@ -292,10 +292,10 @@ export const cypress: FrameworkGenerator = {
     };
     const checkpoint = checkpointName(industry.checkpoints);
 
-    const viewports = industry.viewports.length
-      ? industry.viewports
-      : [{ width: 1440, height: 900 }];
-    const primaryViewport = viewports[0];
+    const primaryViewport = industry.viewports[0] ?? {
+      width: 1440,
+      height: 900,
+    };
 
     const packageJson = JSON.stringify(
       {
@@ -363,16 +363,12 @@ module.exports = eyesPlugin(
     const supportFile = `import "@applitools/eyes-cypress/commands";
 `;
 
+    // When UFG is on, emit at least three desktop browsers on the primary viewport.
     const browserConfig = useUltrafastGrid
       ? `[
-${viewports
-  .map(
-    (v) =>
-      `    { width: ${v.width}, height: ${v.height}, name: "chrome" },
-    { width: ${v.width}, height: ${v.height}, name: "firefox" },`,
-  )
-  .join("\n")}
-    { deviceName: "iPhone X" },
+    { width: ${primaryViewport.width}, height: ${primaryViewport.height}, name: "chrome" },
+    { width: ${primaryViewport.width}, height: ${primaryViewport.height}, name: "firefox" },
+    { width: ${primaryViewport.width}, height: ${primaryViewport.height}, name: "safari" },
   ]`
       : `{ width: ${primaryViewport.width}, height: ${primaryViewport.height}, name: "chrome" }`;
 

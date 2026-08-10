@@ -67,10 +67,11 @@ export type LanguageId =
   | "csharp";
 
 /**
- * Applitools match levels used by the generated "try it out" tests. Each level
- * gets its own test file so a first-time user can see the difference.
+ * Match levels used by generated starter tests (one file per level) and by
+ * industry region presets. Dynamic is intentionally not supported — starters
+ * use Strict, Exact, and Layout only.
  */
-export type MatchLevel = "dynamic" | "exact" | "layout";
+export type MatchLevel = "strict" | "exact" | "layout";
 
 /** A single file in a generated runnable project. */
 export interface ProjectFile {
