@@ -323,6 +323,21 @@ cp .env.example .env
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
 {{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a Chrome window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                  # headed (default)
+npm run test:headless     # headless
+HEADLESS=1 npm test       # headless, one-off
+\`\`\`
+
+\`HEADLESS\` is read in \`wdio.conf\` and adds \`--headless=new\` to the Chrome
+capabilities. Use it in CI — a headed browser needs a display, so \`npm test\`
+will fail on a bare CI runner.
+
 ## Ultrafast Grid
 
 Each spec has a \`USE_ULTRAFAST_GRID\` constant at the top. When true, the
@@ -411,12 +426,17 @@ export const webdriverio: FrameworkGenerator = {
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           wdio: "wdio run ./wdio.conf." + ext,
+          "wdio:headless": `cross-env HEADLESS=1 wdio run ./wdio.conf.${ext}`,
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} wdio`
             : "wdio run ./wdio.conf." + ext,
+          "test:headless": target.isLocal
+            ? `start-server-and-test start:sample ${target.url} wdio:headless`
+            : `cross-env HEADLESS=1 wdio run ./wdio.conf.${ext}`,
         },
         devDependencies: {
           "@applitools/eyes-webdriverio": "^5.61.0",
+          "cross-env": "^7.0.3",
           "@wdio/cli": "^9.0.0",
           "@wdio/local-runner": "^9.0.0",
           "@wdio/mocha-framework": "^9.0.0",
@@ -437,18 +457,25 @@ export const webdriverio: FrameworkGenerator = {
       2,
     );
 
-    // Headless Chrome so `npm test` works in CI with no display.
+    // Headed by default so the sample app is visible while the test runs.
+    const headlessConst = `// Headed by default, so you can watch the sample app render while the
+// checkpoint is captured. Set HEADLESS=1 (or run \`npm run test:headless\`) for a
+// headless run — that is what you want in CI.
+const headless = process.env.HEADLESS === "1" || process.env.HEADLESS === "true";`;
+
     const capabilities = `[
       {
         browserName: "chrome",
         "goog:chromeOptions": {
-          args: ["--headless=new", "--disable-gpu"],
+          args: headless ? ["--headless=new", "--disable-gpu"] : [],
         },
       },
     ]`;
 
     const wdioConfig = ts
       ? `import "dotenv/config";
+
+${headlessConst}
 
 export const config: WebdriverIO.Config = {
   runner: "local",
@@ -474,6 +501,8 @@ export const config: WebdriverIO.Config = {
 };
 `
       : `require("dotenv").config();
+
+${headlessConst}
 
 exports.config = {
   runner: "local",

@@ -189,6 +189,11 @@ const USE_ULTRAFAST_GRID = ${useUltrafastGrid};
 // The ${jsString(appName)} sample page under test.
 const SAMPLE_URL = "${jsString(target.url)}";
 
+// Headed by default, so you can watch the sample app render while the
+// checkpoint is captured. Set HEADLESS=1 (or run \`npm run test:headless\`) for a
+// headless run — that is what you want in CI.
+const HEADLESS = process.env.HEADLESS === "1" || process.env.HEADLESS === "true";
+
 describe("${testName}", () => {
 ${decls}
 
@@ -199,9 +204,14 @@ ${decls}
   });
 
   beforeEach(async () => {
+    const chromeOptions = new ChromeOptions();
+    if (HEADLESS) {
+      chromeOptions.addArguments("--headless=new", "--disable-gpu");
+    }
+
     driver = await new Builder()
       .forBrowser("chrome")
-      .setChromeOptions(new ChromeOptions().addArguments("--headless=new"))
+      .setChromeOptions(chromeOptions)
       .build();
 
     // Eyes reads APPLITOOLS_API_KEY from the environment (loaded from .env by
@@ -330,6 +340,21 @@ cp .env.example .env
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
 {{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a Chrome window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                  # headed (default)
+npm run test:headless     # headless
+HEADLESS=1 npm test       # headless, one-off
+\`\`\`
+
+\`HEADLESS\` is read at the top of each spec and adds \`--headless=new\` to the
+Chrome options. Use it in CI — a headed browser needs a display, so \`npm test\`
+will fail on a bare CI runner.
+
 ## Ultrafast Grid
 
 Each spec has a \`USE_ULTRAFAST_GRID\` constant at the top. When true, the
@@ -418,12 +443,17 @@ export const selenium: FrameworkGenerator = {
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           jest: "jest",
+          "jest:headless": "cross-env HEADLESS=1 jest",
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} jest`
             : "jest",
+          "test:headless": target.isLocal
+            ? `start-server-and-test start:sample ${target.url} jest:headless`
+            : "cross-env HEADLESS=1 jest",
         },
         devDependencies: {
           "@applitools/eyes-selenium": "^4.83.0",
+          "cross-env": "^7.0.3",
           dotenv: "^16.4.0",
           jest: "^29.7.0",
           "selenium-webdriver": "^4.27.0",

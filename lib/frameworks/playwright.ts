@@ -214,7 +214,22 @@ cp .env.example .env
 
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
-{{RUN_SECTION}}`;
+{{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a browser window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                  # headed (default)
+npm run test:headless     # headless
+HEADLESS=1 npm test       # headless, one-off
+npx playwright test --headed   # force headed regardless of HEADLESS
+\`\`\`
+
+Use headless in CI — a headed browser needs a display, so \`npm test\` will fail
+on a bare CI runner.
+`;
 
 const RUN_LOCAL = `## 3. Run
 
@@ -282,10 +297,14 @@ export const playwright: FrameworkGenerator = {
         name: `${vars.PROJECT_SLUG}-eyes-playwright`,
         version: "1.0.0",
         private: true,
-        scripts: { test: "playwright test" },
+        scripts: {
+          test: "playwright test",
+          "test:headless": "cross-env HEADLESS=1 playwright test",
+        },
         devDependencies: {
           "@applitools/eyes-playwright": "^1.34.0",
           "@playwright/test": "^1.49.0",
+          "cross-env": "^7.0.3",
           dotenv: "^16.4.0",
         },
       },
@@ -326,15 +345,24 @@ ${browsersInfo}
       type: "classic",
     }`;
 
+    // Headed by default so the sample app is visible while the test runs.
+    const headlessConst = `// Headed by default, so you can watch the sample app render while the
+// checkpoint is captured. Set HEADLESS=1 (or run \`npm run test:headless\`) for a
+// headless run — that is what you want in CI.
+const headless = process.env.HEADLESS === "1" || process.env.HEADLESS === "true";`;
+
     const playwrightConfig = ts
       ? `import "dotenv/config";
 import { defineConfig } from "@playwright/test";
 import type { EyesFixture } from "@applitools/eyes-playwright/fixture";
 
+${headlessConst}
+
 export default defineConfig<EyesFixture>({
   testDir: "./tests",
   use: {
     baseURL: "${target.origin}",
+    headless,
     ${eyesConfig},
   },${webServer}
 });
@@ -342,10 +370,13 @@ export default defineConfig<EyesFixture>({
       : `require("dotenv").config();
 const { defineConfig } = require("@playwright/test");
 
+${headlessConst}
+
 module.exports = defineConfig({
   testDir: "./tests",
   use: {
     baseURL: "${target.origin}",
+    headless,
     ${eyesConfig},
   },${webServer}
 });
