@@ -13,17 +13,20 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  * pattern). Given an industry preset it emits a bare-minimum, runnable
  * Applitools Eyes project pointed at that industry's sample app: config, a
  * launcher for the sample app, and one full-window `eyes.check` per match level
- * (Dynamic / Exact / Layout, no locators).
+ * (Strict / Exact / Layout, no locators).
  *
  * It works by token-substituting small templates. Person C: copy this shape for
  * Cypress / Selenium / WebdriverIO — same file set, different SDK syntax.
  */
 
 const LEVELS: { id: MatchLevel; label: string; matchLevel: string }[] = [
-  { id: "dynamic", label: "Dynamic", matchLevel: "Dynamic" },
+  { id: "strict", label: "Strict", matchLevel: "Strict" },
   { id: "exact", label: "Exact", matchLevel: "Exact" },
   { id: "layout", label: "Layout", matchLevel: "Layout" },
 ];
+
+/** Desktop browsers emitted into Ultrafast Grid config when UFG is enabled. */
+const UFG_BROWSERS = ["chrome", "firefox", "safari"] as const;
 
 function render(template: string, vars: Record<string, string>): string {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
@@ -45,7 +48,7 @@ function checkpointName(checkpoints: string[]): string {
  * equivalent.
  */
 const REGION_KEYS: Record<MatchLevel, string> = {
-  dynamic: "dynamicRegions",
+  strict: "strictRegions",
   layout: "layoutRegions",
   exact: "strictRegions",
 };
@@ -189,7 +192,7 @@ A minimal, runnable Applitools Eyes project pointed at the {{INDUSTRY_LABEL}}
 sample page ({{SAMPLE_URL}}). It runs the **same** page through three visual
 checkpoints — one per match level — so you can see how each behaves:
 
-- \`tests/{{PROJECT_SLUG}}.dynamic.spec.{{EXT}}\` — **Dynamic** match level
+- \`tests/{{PROJECT_SLUG}}.strict.spec.{{EXT}}\` — **Strict** match level
 - \`tests/{{PROJECT_SLUG}}.exact.spec.{{EXT}}\` — **Exact** match level
 - \`tests/{{PROJECT_SLUG}}.layout.spec.{{EXT}}\` — **Layout** match level
 
@@ -250,10 +253,14 @@ export const playwright: FrameworkGenerator = {
   id: "playwright",
   label: "Playwright",
   supportedLanguages: ["javascript", "typescript"],
-  generate({ language, industry }: GeneratorOptions) {
+  generate({ language, useUltrafastGrid, industry }: GeneratorOptions) {
     const ts = language === "typescript";
     const ext = ts ? "ts" : "js";
     const target = sampleTarget(industry);
+    const primaryViewport = industry.viewports[0] ?? {
+      width: 1280,
+      height: 720,
+    };
     const baseVars = {
       APP_NAME: industry.appName,
       BATCH_NAME: industry.batchName,
@@ -298,13 +305,38 @@ export const playwright: FrameworkGenerator = {
   },`
       : "";
 
+    const browsersInfo = UFG_BROWSERS.map(
+      (name) =>
+        `        { name: "${name}", width: ${primaryViewport.width}, height: ${primaryViewport.height} },`,
+    ).join("\n");
+
+    const eyesConfig = useUltrafastGrid
+      ? `eyesConfig: {
+      appName: "${vars.APP_NAME}",
+      batch: { name: "${vars.BATCH_NAME}" },
+      // Ultrafast Grid — re-renders each checkpoint across these browsers.
+      type: "ufg",
+      browsersInfo: [
+${browsersInfo}
+      ],
+    }`
+      : `eyesConfig: {
+      appName: "${vars.APP_NAME}",
+      batch: { name: "${vars.BATCH_NAME}" },
+      type: "classic",
+    }`;
+
     const playwrightConfig = ts
       ? `import "dotenv/config";
 import { defineConfig } from "@playwright/test";
+import type { EyesFixture } from "@applitools/eyes-playwright/fixture";
 
-export default defineConfig({
+export default defineConfig<EyesFixture>({
   testDir: "./tests",
-  use: { baseURL: "${target.origin}" },${webServer}
+  use: {
+    baseURL: "${target.origin}",
+    ${eyesConfig},
+  },${webServer}
 });
 `
       : `require("dotenv").config();
@@ -312,11 +344,15 @@ const { defineConfig } = require("@playwright/test");
 
 module.exports = defineConfig({
   testDir: "./tests",
-  use: { baseURL: "${target.origin}" },${webServer}
+  use: {
+    baseURL: "${target.origin}",
+    ${eyesConfig},
+  },${webServer}
 });
 `;
 
     const applitoolsConfig = `// Applitools reads APPLITOOLS_API_KEY from the environment (.env).
+// Runner / browser matrix lives in playwright.config (eyesConfig).
 module.exports = {
   appName: "${vars.APP_NAME}",
   batch: { name: "${vars.BATCH_NAME}" },

@@ -248,13 +248,13 @@ function ToggleField({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative h-6 w-10 shrink-0 rounded-full transition-colors ${
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
           checked ? "bg-accent" : "bg-border"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-5 w-5 rounded-full bg-surface shadow-sm transition-transform ${
-            checked ? "translate-x-[18px]" : "translate-x-0.5"
+          className={`pointer-events-none block h-5 w-5 rounded-full bg-surface shadow-sm transition-transform ${
+            checked ? "translate-x-[22px]" : "translate-x-0.5"
           }`}
         />
       </button>

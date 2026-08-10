@@ -14,8 +14,8 @@ export const manufacturing: IndustryPreset = {
   checkpoints: ["Dashboard", "Inventory", "Work Orders", "Quality Control"],
   tags: ["manufacturing", "operations"],
   dynamicRegions: [
-    { selector: '[data-testid="alerts-badge"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="shift-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="alerts-badge"]', matchLevel: "layout" },
+    { selector: '[data-testid="shift-countdown"]', matchLevel: "layout" },
     { selector: '[data-testid="throughput-gauge"]', matchLevel: "layout" },
     { selector: '[data-testid="inventory-table"]', matchLevel: "layout" },
     { selector: '[data-testid="defect-chart"]', matchLevel: "layout" },

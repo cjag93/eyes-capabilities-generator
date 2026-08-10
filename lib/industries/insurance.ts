@@ -14,9 +14,9 @@ export const insurance: IndustryPreset = {
   checkpoints: ["Get a Quote", "Policy Dashboard", "File a Claim", "Billing"],
   tags: ["insurance", "claims"],
   dynamicRegions: [
-    { selector: '[data-testid="premium-estimate"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="claims-badge"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="renewal-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="premium-estimate"]', matchLevel: "layout" },
+    { selector: '[data-testid="claims-badge"]', matchLevel: "layout" },
+    { selector: '[data-testid="renewal-countdown"]', matchLevel: "layout" },
     { selector: '[data-testid="coverage-chart"]', matchLevel: "layout" },
     { selector: '[data-testid="claims-list"]', matchLevel: "layout" },
   ],

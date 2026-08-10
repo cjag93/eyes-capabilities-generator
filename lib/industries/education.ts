@@ -16,6 +16,6 @@ export const education: IndustryPreset = {
   dynamicRegions: [
     { selector: '[data-testid="course-catalog"]', matchLevel: "layout" },
     { selector: '[data-testid="grade-chart"]', matchLevel: "layout" },
-    { selector: '[data-testid="due-countdown"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="due-countdown"]', matchLevel: "layout" },
   ],
 };

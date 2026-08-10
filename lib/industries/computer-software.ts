@@ -14,8 +14,8 @@ export const computerSoftware: IndustryPreset = {
   checkpoints: ["Login", "Onboarding", "Dashboard", "Settings"],
   tags: ["software", "saas"],
   dynamicRegions: [
-    { selector: '[data-testid="status-ticker"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="notification-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="status-ticker"]', matchLevel: "layout" },
+    { selector: '[data-testid="notification-badge"]', matchLevel: "layout" },
     { selector: '[data-testid="onboarding-progress"]', matchLevel: "layout" },
     { selector: '[data-testid="usage-chart"]', matchLevel: "layout" },
     { selector: '[data-testid="activity-feed"]', matchLevel: "layout" },

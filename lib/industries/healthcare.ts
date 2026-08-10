@@ -14,10 +14,10 @@ export const healthcare: IndustryPreset = {
   checkpoints: ["Login", "Patient Dashboard", "Appointment Scheduling", "Medical Records"],
   tags: ["healthcare", "compliance"],
   dynamicRegions: [
-    { selector: '[data-testid="greeting"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="greeting"]', matchLevel: "layout" },
     { selector: '[data-testid="vitals-chart"]', matchLevel: "layout" },
-    { selector: '[data-testid="calendar"]', matchLevel: "dynamic" },
-    { selector: '[data-testid="message-badge"]', matchLevel: "dynamic" },
+    { selector: '[data-testid="calendar"]', matchLevel: "layout" },
+    { selector: '[data-testid="message-badge"]', matchLevel: "layout" },
     { selector: '[data-testid="records-list"]', matchLevel: "layout" },
   ],
 };
