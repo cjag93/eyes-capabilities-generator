@@ -22,7 +22,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  *   - a `ClassicRunner` or `VisualGridRunner` shared by the suite
  *   - `Configuration` + `BatchInfo` -> `eyes.setConfiguration(config)`
  *   - `eyes.open(browser, appName, testName, new RectangleSize(w, h))`
- *   - `eyes.check(Target.window().fully().withName(...).matchLevel(...))`
+ *   - `eyes.check(name, Target.window().fully().matchLevel(...))`
  *   - `eyes.closeAsync()` per test, `runner.getAllTestResults()` at the end
  *
  * Mocha is the test framework (WDIO's default, matching Applitools' official
@@ -48,6 +48,17 @@ function jsString(value: string): string {
 /** The industry's first checkpoint names the single check these tests take. */
 function checkpointName(checkpoints: string[]): string {
   return jsString(checkpoints[0] ?? "Login");
+}
+
+/**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
 }
 
 /**
@@ -129,6 +140,7 @@ function testFile(
     appName: string;
     batchName: string;
     checkpoint: string;
+    tag: string;
     target: SampleTarget;
     regions?: IndustryRegion[];
     viewport: Viewport;
@@ -139,6 +151,7 @@ function testFile(
     appName,
     batchName,
     checkpoint,
+    tag,
     target,
     regions,
     viewport,
@@ -225,9 +238,9 @@ ${gridBrowsers(viewport)}
     await browser.url(SAMPLE_PATH);
 
     await eyes.check(
+      "${tag}",
       Target.window()
         .fully()
-        .withName("${checkpoint}")
         .matchLevel("${level.matchLevel}")${regionCalls(regions)},
     );
   });
@@ -323,6 +336,21 @@ cp .env.example .env
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
 {{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a Chrome window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                  # headed (default)
+npm run test:headless     # headless
+HEADLESS=1 npm test       # headless, one-off
+\`\`\`
+
+\`HEADLESS\` is read in \`wdio.conf\` and adds \`--headless=new\` to the Chrome
+capabilities. Use it in CI — a headed browser needs a display, so \`npm test\`
+will fail on a bare CI runner.
+
 ## Ultrafast Grid
 
 Each spec has a \`USE_ULTRAFAST_GRID\` constant at the top. When true, the
@@ -397,6 +425,7 @@ export const webdriverio: FrameworkGenerator = {
       appName: vars.APP_NAME,
       batchName: vars.BATCH_NAME,
       checkpoint: checkpointName(industry.checkpoints),
+      tag: checkpointTag(industry),
       target,
       regions: industry.dynamicRegions,
       viewport: primaryViewport,
@@ -411,12 +440,17 @@ export const webdriverio: FrameworkGenerator = {
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           wdio: "wdio run ./wdio.conf." + ext,
+          "wdio:headless": `cross-env HEADLESS=1 wdio run ./wdio.conf.${ext}`,
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} wdio`
             : "wdio run ./wdio.conf." + ext,
+          "test:headless": target.isLocal
+            ? `start-server-and-test start:sample ${target.url} wdio:headless`
+            : `cross-env HEADLESS=1 wdio run ./wdio.conf.${ext}`,
         },
         devDependencies: {
           "@applitools/eyes-webdriverio": "^5.61.0",
+          "cross-env": "^7.0.3",
           "@wdio/cli": "^9.0.0",
           "@wdio/local-runner": "^9.0.0",
           "@wdio/mocha-framework": "^9.0.0",
@@ -437,18 +471,25 @@ export const webdriverio: FrameworkGenerator = {
       2,
     );
 
-    // Headless Chrome so `npm test` works in CI with no display.
+    // Headed by default so the sample app is visible while the test runs.
+    const headlessConst = `// Headed by default, so you can watch the sample app render while the
+// checkpoint is captured. Set HEADLESS=1 (or run \`npm run test:headless\`) for a
+// headless run — that is what you want in CI.
+const headless = process.env.HEADLESS === "1" || process.env.HEADLESS === "true";`;
+
     const capabilities = `[
       {
         browserName: "chrome",
         "goog:chromeOptions": {
-          args: ["--headless=new", "--disable-gpu"],
+          args: headless ? ["--headless=new", "--disable-gpu"] : [],
         },
       },
     ]`;
 
     const wdioConfig = ts
       ? `import "dotenv/config";
+
+${headlessConst}
 
 export const config: WebdriverIO.Config = {
   runner: "local",
@@ -474,6 +515,8 @@ export const config: WebdriverIO.Config = {
 };
 `
       : `require("dotenv").config();
+
+${headlessConst}
 
 exports.config = {
   runner: "local",

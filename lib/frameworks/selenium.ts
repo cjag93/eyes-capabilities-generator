@@ -18,7 +18,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  *   - a `ClassicRunner` or `VisualGridRunner` shared by the suite
  *   - `Configuration` + `BatchInfo` -> `eyes.setConfiguration(config)`
  *   - `eyes.open(driver, appName, testName, new RectangleSize(w, h))`
- *   - `eyes.check(Target.window().fully().withName(...).matchLevel(...))`
+ *   - `eyes.check(name, Target.window().fully().matchLevel(...))`
  *   - `eyes.closeAsync()` per test, `runner.getAllTestResults()` at the end
  *
  * Jest is the test runner (matching Applitools' official example project), and
@@ -44,6 +44,17 @@ function jsString(value: string): string {
 /** The industry's first checkpoint names the single check these tests take. */
 function checkpointName(checkpoints: string[]): string {
   return jsString(checkpoints[0] ?? "Login");
+}
+
+/**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
 }
 
 /**
@@ -125,6 +136,7 @@ function testFile(
     appName: string;
     batchName: string;
     checkpoint: string;
+    tag: string;
     target: SampleTarget;
     regions?: IndustryRegion[];
     viewport: Viewport;
@@ -135,6 +147,7 @@ function testFile(
     appName,
     batchName,
     checkpoint,
+    tag,
     target,
     regions,
     viewport,
@@ -189,6 +202,11 @@ const USE_ULTRAFAST_GRID = ${useUltrafastGrid};
 // The ${jsString(appName)} sample page under test.
 const SAMPLE_URL = "${jsString(target.url)}";
 
+// Headed by default, so you can watch the sample app render while the
+// checkpoint is captured. Set HEADLESS=1 (or run \`npm run test:headless\`) for a
+// headless run — that is what you want in CI.
+const HEADLESS = process.env.HEADLESS === "1" || process.env.HEADLESS === "true";
+
 describe("${testName}", () => {
 ${decls}
 
@@ -199,9 +217,14 @@ ${decls}
   });
 
   beforeEach(async () => {
+    const chromeOptions = new ChromeOptions();
+    if (HEADLESS) {
+      chromeOptions.addArguments("--headless=new", "--disable-gpu");
+    }
+
     driver = await new Builder()
       .forBrowser("chrome")
-      .setChromeOptions(new ChromeOptions().addArguments("--headless=new"))
+      .setChromeOptions(chromeOptions)
       .build();
 
     // Eyes reads APPLITOOLS_API_KEY from the environment (loaded from .env by
@@ -231,9 +254,9 @@ ${gridBrowsers(viewport)}
     await driver.get(SAMPLE_URL);
 
     await eyes.check(
+      "${tag}",
       Target.window()
         .fully()
-        .withName("${checkpoint}")
         .matchLevel("${level.matchLevel}")${regionCalls(regions)},
     );
   }, 60000);
@@ -330,6 +353,21 @@ cp .env.example .env
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
 {{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a Chrome window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                  # headed (default)
+npm run test:headless     # headless
+HEADLESS=1 npm test       # headless, one-off
+\`\`\`
+
+\`HEADLESS\` is read at the top of each spec and adds \`--headless=new\` to the
+Chrome options. Use it in CI — a headed browser needs a display, so \`npm test\`
+will fail on a bare CI runner.
+
 ## Ultrafast Grid
 
 Each spec has a \`USE_ULTRAFAST_GRID\` constant at the top. When true, the
@@ -404,6 +442,7 @@ export const selenium: FrameworkGenerator = {
       appName: vars.APP_NAME,
       batchName: vars.BATCH_NAME,
       checkpoint: checkpointName(industry.checkpoints),
+      tag: checkpointTag(industry),
       target,
       regions: industry.dynamicRegions,
       viewport: primaryViewport,
@@ -418,12 +457,17 @@ export const selenium: FrameworkGenerator = {
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           jest: "jest",
+          "jest:headless": "cross-env HEADLESS=1 jest",
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} jest`
             : "jest",
+          "test:headless": target.isLocal
+            ? `start-server-and-test start:sample ${target.url} jest:headless`
+            : "cross-env HEADLESS=1 jest",
         },
         devDependencies: {
           "@applitools/eyes-selenium": "^4.83.0",
+          "cross-env": "^7.0.3",
           dotenv: "^16.4.0",
           jest: "^29.7.0",
           "selenium-webdriver": "^4.27.0",

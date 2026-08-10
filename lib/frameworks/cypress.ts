@@ -43,6 +43,17 @@ function checkpointName(checkpoints: string[]): string {
 }
 
 /**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
+}
+
+/**
  * Eyes region bucket for each preset match level. There is no "exact" region
  * type, so exact falls back to `strictRegions` — the nearest region-level
  * equivalent.
@@ -104,6 +115,7 @@ function testFile(
   appName: string,
   viewport: { width: number; height: number },
   checkpoint: string,
+  tag: string,
   target: SampleTarget,
   regions: IndustryRegion[] = [],
 ): string {
@@ -137,7 +149,7 @@ ${selectors.map((s) => `        "${jsString(s)}",`).join("\n")}
   it("matches the sample page", () => {
     cy.visit("${jsString(target.path)}");
     cy.eyesCheckWindow({
-      tag: "${checkpoint}",
+      tag: "${tag}",
       target: "window",
       fully: true,
       matchLevel: "${level.matchLevel}",${regionEntries}
@@ -221,7 +233,26 @@ cp .env.example .env
 
 Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
-{{RUN_SECTION}}`;
+{{RUN_SECTION}}
+## Headed or headless
+
+Tests run **headed** by default, so a browser window opens and you can watch the
+{{INDUSTRY_LABEL}} sample page render as the checkpoint is captured.
+
+\`\`\`bash
+npm test                     # headed (default)
+npm run test:headless        # headless
+npm run cy:run -- --browser firefox   # extra Cypress flags pass through
+\`\`\`
+
+Cypress decides this with the \`--headed\` / \`--headless\` CLI flags rather than a
+config option, so the two scripts above are the switch — there is no
+\`headless\` key in \`cypress.config\` to change. (Note \`cypress run\` on its own is
+headless; the \`test\` script adds \`--headed\` to flip the default.)
+
+Use headless in CI — a headed browser needs a display, so \`npm test\` will fail
+on a bare CI runner.
+`;
 
 const RUN_LOCAL = `## 3. Run
 
@@ -291,6 +322,7 @@ export const cypress: FrameworkGenerator = {
       RUN_SECTION: render(target.isLocal ? RUN_LOCAL : RUN_REMOTE, baseVars),
     };
     const checkpoint = checkpointName(industry.checkpoints);
+    const tag = checkpointTag(industry);
 
     const primaryViewport = industry.viewports[0] ?? {
       width: 1440,
@@ -305,10 +337,15 @@ export const cypress: FrameworkGenerator = {
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
           "cy:open": "cypress open",
-          "cy:run": "cypress run",
+          // Headed by default so the sample app is visible while the test runs.
+          "cy:run": "cypress run --headed",
+          "cy:run:headless": "cypress run --headless",
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} cy:run`
-            : "cypress run",
+            : "cypress run --headed",
+          "test:headless": target.isLocal
+            ? `start-server-and-test start:sample ${target.url} cy:run:headless`
+            : "cypress run --headless",
         },
         devDependencies: {
           "@applitools/eyes-cypress": "^3.44.0",
@@ -449,6 +486,7 @@ cypress/videos/
           vars.APP_NAME,
           primaryViewport,
           checkpoint,
+          tag,
           target,
           industry.dynamicRegions,
         ),
@@ -477,6 +515,7 @@ cypress/videos/
         vars.APP_NAME,
         primaryViewport,
         checkpoint,
+        tag,
         target,
         industry.dynamicRegions,
       ),
