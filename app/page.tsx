@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 import { GeneratorWizard } from "@/components/wizard";
@@ -41,10 +42,17 @@ function SiteHeader() {
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-4 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <EyeMark className="h-6 w-6 text-accent" />
-          <span className="text-sm font-semibold tracking-tight sm:text-base">
-            Eyes Capabilities Generator
+        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+          <Image
+            src="/applitools-mark.png"
+            alt="Applitools"
+            width={28}
+            height={28}
+            className="h-7 w-7 shrink-0"
+            priority
+          />
+          <span className="truncate text-sm font-semibold tracking-tight sm:text-base">
+            Applitools Eyes Capabilities Generator
           </span>
         </Link>
         <div className="flex items-center gap-3">
@@ -66,54 +74,32 @@ function SiteHeader() {
 function SiteFooter() {
   return (
     <footer className="border-t border-border">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-6 py-6 text-sm text-muted-foreground sm:px-8">
-        <p className="max-w-3xl text-pretty leading-6">
-          Generated projects are for evaluation and getting started with
-          Applitools Eyes. Keep API keys in{" "}
-          <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.85em]">
-            .env
-          </code>{" "}
-          — never hard-code secrets. Applitools takes security seriously; learn
-          more in our{" "}
-          <a
-            href="https://trust.applitools.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-foreground underline-offset-4 hover:underline"
-          >
-            Security Trust Center
-          </a>
-          .
-        </p>
-        <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-          <p>
-            Snippets reference{" "}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-6 py-6 text-sm text-muted-foreground sm:flex-row sm:items-end sm:justify-between sm:px-8">
+        <div className="max-w-xl space-y-1.5">
+          <p className="text-pretty leading-6">
+            Starter projects are provided to help you evaluate Applitools Eyes.
+            Store your API key in{" "}
             <code className="rounded bg-surface-muted px-1.5 py-0.5 font-mono text-[0.85em]">
-              APPLITOOLS_API_KEY
-            </code>{" "}
-            from your environment.
+              .env
+            </code>
+            ; never commit credentials to source control.
           </p>
-          <p>Built for Applitools Eyes.</p>
+          <p className="text-pretty leading-6">
+            For details on our security practices, visit the{" "}
+            <a
+              href="https://trust.applitools.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Applitools Trust Center
+            </a>
+            .
+          </p>
         </div>
+        <p className="shrink-0">Built for Applitools Eyes.</p>
       </div>
     </footer>
   );
 }
 
-function EyeMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}

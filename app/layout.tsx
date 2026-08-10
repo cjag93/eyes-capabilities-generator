@@ -15,12 +15,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Eyes Capabilities Generator",
-    template: "%s · Eyes Capabilities Generator",
+    default: "Applitools Eyes Capabilities Generator",
+    template: "%s · Applitools Eyes Capabilities Generator",
   },
   description:
     "Pick an industry and a framework, and get a copyable Applitools Eyes visual-testing snippet tailored to that combination.",
-  applicationName: "Eyes Capabilities Generator",
+  applicationName: "Applitools Eyes Capabilities Generator",
   keywords: [
     "Applitools",
     "Eyes",
@@ -31,9 +31,9 @@ export const metadata: Metadata = {
     "Selenium",
     "code generator",
   ],
-  authors: [{ name: "Eyes Capabilities Generator team" }],
+  authors: [{ name: "Applitools Eyes Capabilities Generator team" }],
   openGraph: {
-    title: "Eyes Capabilities Generator",
+    title: "Applitools Eyes Capabilities Generator",
     description:
       "Generate tailored Applitools Eyes snippets from an industry + framework combination.",
     type: "website",
