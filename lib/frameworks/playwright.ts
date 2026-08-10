@@ -43,6 +43,17 @@ function checkpointName(checkpoints: string[]): string {
 }
 
 /**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
+}
+
+/**
  * Eyes region bucket for each preset match level. There is no "exact" region
  * type, so exact falls back to `strictRegions` — the nearest region-level
  * equivalent.
@@ -107,6 +118,7 @@ function testFile(
   level: (typeof LEVELS)[number],
   ts: boolean,
   checkpoint: string,
+  tag: string,
   target: SampleTarget,
   regions: IndustryRegion[] = [],
 ): string {
@@ -136,7 +148,7 @@ ${regionEntries.join("\n")}
 // ${jsString(target.url)} (the path resolves against baseURL in playwright.config).
 test("${checkpoint} — ${level.label} match level", async ({ page, eyes }) => {
   await page.goto("${jsString(target.path)}");
-  await eyes.check("${checkpoint}", ${checkSettings});
+  await eyes.check("${tag}", ${checkSettings});
 });
 `;
 }
@@ -291,6 +303,7 @@ export const playwright: FrameworkGenerator = {
       RUN_SECTION: render(target.isLocal ? RUN_LOCAL : RUN_REMOTE, baseVars),
     };
     const checkpoint = checkpointName(industry.checkpoints);
+    const tag = checkpointTag(industry);
 
     const packageJson = JSON.stringify(
       {
@@ -437,7 +450,7 @@ playwright-report/
         : []),
       ...LEVELS.map((level) => ({
         path: `tests/${vars.PROJECT_SLUG}.${level.id}.spec.${ext}`,
-        contents: testFile(level, ts, checkpoint, target, industry.dynamicRegions),
+        contents: testFile(level, ts, checkpoint, tag, target, industry.dynamicRegions),
         language,
       })),
       { path: ".env.example", contents: envExample, language: "env" },
@@ -449,7 +462,7 @@ playwright-report/
     return {
       filename: `tests/${vars.PROJECT_SLUG}.${primary.id}.spec.${ext}`,
       language,
-      code: testFile(primary, ts, checkpoint, target, industry.dynamicRegions),
+      code: testFile(primary, ts, checkpoint, tag, target, industry.dynamicRegions),
       files,
     };
   },

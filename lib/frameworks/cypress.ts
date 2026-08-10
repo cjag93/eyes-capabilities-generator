@@ -43,6 +43,17 @@ function checkpointName(checkpoints: string[]): string {
 }
 
 /**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
+}
+
+/**
  * Eyes region bucket for each preset match level. There is no "exact" region
  * type, so exact falls back to `strictRegions` — the nearest region-level
  * equivalent.
@@ -104,6 +115,7 @@ function testFile(
   appName: string,
   viewport: { width: number; height: number },
   checkpoint: string,
+  tag: string,
   target: SampleTarget,
   regions: IndustryRegion[] = [],
 ): string {
@@ -137,7 +149,7 @@ ${selectors.map((s) => `        "${jsString(s)}",`).join("\n")}
   it("matches the sample page", () => {
     cy.visit("${jsString(target.path)}");
     cy.eyesCheckWindow({
-      tag: "${checkpoint}",
+      tag: "${tag}",
       target: "window",
       fully: true,
       matchLevel: "${level.matchLevel}",${regionEntries}
@@ -310,6 +322,7 @@ export const cypress: FrameworkGenerator = {
       RUN_SECTION: render(target.isLocal ? RUN_LOCAL : RUN_REMOTE, baseVars),
     };
     const checkpoint = checkpointName(industry.checkpoints);
+    const tag = checkpointTag(industry);
 
     const primaryViewport = industry.viewports[0] ?? {
       width: 1440,
@@ -473,6 +486,7 @@ cypress/videos/
           vars.APP_NAME,
           primaryViewport,
           checkpoint,
+          tag,
           target,
           industry.dynamicRegions,
         ),
@@ -501,6 +515,7 @@ cypress/videos/
         vars.APP_NAME,
         primaryViewport,
         checkpoint,
+        tag,
         target,
         industry.dynamicRegions,
       ),

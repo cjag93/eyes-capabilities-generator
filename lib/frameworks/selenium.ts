@@ -18,7 +18,7 @@ import { SAMPLE_APP_FILES } from "../sample-app.generated";
  *   - a `ClassicRunner` or `VisualGridRunner` shared by the suite
  *   - `Configuration` + `BatchInfo` -> `eyes.setConfiguration(config)`
  *   - `eyes.open(driver, appName, testName, new RectangleSize(w, h))`
- *   - `eyes.check(Target.window().fully().withName(...).matchLevel(...))`
+ *   - `eyes.check(name, Target.window().fully().matchLevel(...))`
  *   - `eyes.closeAsync()` per test, `runner.getAllTestResults()` at the end
  *
  * Jest is the test runner (matching Applitools' official example project), and
@@ -44,6 +44,17 @@ function jsString(value: string): string {
 /** The industry's first checkpoint names the single check these tests take. */
 function checkpointName(checkpoints: string[]): string {
   return jsString(checkpoints[0] ?? "Login");
+}
+
+/**
+ * Name Eyes records for the checkpoint: the app under test, the industry, then
+ * the checkpoint itself — "Acme Bank — Finance — Login". Composing all three
+ * keeps a step identifiable in the dashboard, where checkpoints from different
+ * industries otherwise share generic names like "Login".
+ */
+function checkpointTag(industry: IndustryPreset): string {
+  const first = industry.checkpoints[0] ?? "Login";
+  return jsString(`${industry.appName} — ${industry.label} — ${first}`);
 }
 
 /**
@@ -125,6 +136,7 @@ function testFile(
     appName: string;
     batchName: string;
     checkpoint: string;
+    tag: string;
     target: SampleTarget;
     regions?: IndustryRegion[];
     viewport: Viewport;
@@ -135,6 +147,7 @@ function testFile(
     appName,
     batchName,
     checkpoint,
+    tag,
     target,
     regions,
     viewport,
@@ -241,9 +254,9 @@ ${gridBrowsers(viewport)}
     await driver.get(SAMPLE_URL);
 
     await eyes.check(
+      "${tag}",
       Target.window()
         .fully()
-        .withName("${checkpoint}")
         .matchLevel("${level.matchLevel}")${regionCalls(regions)},
     );
   }, 60000);
@@ -429,6 +442,7 @@ export const selenium: FrameworkGenerator = {
       appName: vars.APP_NAME,
       batchName: vars.BATCH_NAME,
       checkpoint: checkpointName(industry.checkpoints),
+      tag: checkpointTag(industry),
       target,
       regions: industry.dynamicRegions,
       viewport: primaryViewport,
