@@ -6,6 +6,7 @@ import type {
   MatchLevel,
   ProjectFile,
 } from "../types";
+import { SAMPLE_APP_FILES } from "../sample-app.generated";
 
 /**
  * Playwright generator (reference implementation of the "runnable project"
@@ -138,18 +139,32 @@ test("${checkpoint} — ${level.label} match level", async ({ page, eyes }) => {
 }
 
 /**
- * Boots this repo's Next.js dev server so the sample page is reachable. Only
- * emitted for presets whose sampleUrl is local.
+ * Boots the sample app bundled under `sample-app/`. Only emitted for presets
+ * whose sampleUrl is local.
  */
-const SAMPLE_APP_JS = `// Starts the {{INDUSTRY_LABEL}} sample app that serves {{SAMPLE_URL}}.
-// The sample page lives in the eyes-capabilities-generator repo, so point
-// SAMPLE_APP_DIR at your checkout if it is not in the default location.
-const { spawn } = require("child_process");
+const SAMPLE_APP_JS = `// Starts the bundled sample app that serves {{SAMPLE_URL}}.
+//
+// The app is a self-contained Next.js project in ./sample-app; its dependencies
+// install on first run. Set SAMPLE_APP_DIR to use a different copy instead
+// (for example a checkout of eyes-capabilities-generator).
+const { spawn, spawnSync } = require("child_process");
+const { existsSync } = require("fs");
 const path = require("path");
 
-const appDir = path.resolve(
-  process.env.SAMPLE_APP_DIR || path.join("..", "eyes-capabilities-generator"),
-);
+const appDir = path.resolve(__dirname, process.env.SAMPLE_APP_DIR || "sample-app");
+
+if (!existsSync(path.join(appDir, "node_modules"))) {
+  console.log("Installing sample app dependencies (first run only)...");
+  const install = spawnSync("npm", ["install"], {
+    cwd: appDir,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  if (install.status !== 0) {
+    console.error("Could not install sample app dependencies in " + appDir);
+    process.exit(install.status === null ? 1 : install.status);
+  }
+}
 
 console.log("Starting the {{INDUSTRY_LABEL}} sample app from " + appDir);
 
@@ -161,7 +176,6 @@ const child = spawn("npm", ["run", "dev"], {
 
 child.on("error", (error) => {
   console.error("Could not start the sample app from " + appDir);
-  console.error("Set SAMPLE_APP_DIR to your eyes-capabilities-generator checkout.");
   console.error(error.message);
   process.exit(1);
 });
@@ -199,25 +213,28 @@ Get a key from the [Applitools dashboard](https://eyes.applitools.com).
 
 {{RUN_SECTION}}`;
 
-const RUN_LOCAL = `## 3. Point at the sample app
-
-The {{INDUSTRY_LABEL}} sample page is served by the
-\`eyes-capabilities-generator\` repo. \`sample-app.js\` starts it for you and
-Playwright's \`webServer\` waits for it, but it needs to know where the repo is.
-It defaults to \`../eyes-capabilities-generator\`; override it in \`.env\`:
-
-\`\`\`bash
-SAMPLE_APP_DIR=/path/to/eyes-capabilities-generator
-\`\`\`
-
-If you already have \`npm run dev\` running there, Playwright reuses it instead
-of starting a second server.
-
-## 4. Run
+const RUN_LOCAL = `## 3. Run
 
 \`\`\`bash
 npm test
 \`\`\`
+
+That is everything — the sample app ships with this project.
+
+## The bundled sample app
+
+\`sample-app/\` is a self-contained Next.js copy of the industry sample pages,
+including {{SAMPLE_URL}}. Playwright's \`webServer\` runs \`sample-app.js\`, which
+installs the app's dependencies on first run (so the first \`npm test\` takes a
+minute), starts it, and waits for the page before the tests begin.
+
+If you already have it running, Playwright reuses that server instead of
+starting a second one. To test a different copy — a checkout of
+\`eyes-capabilities-generator\`, or a deployed URL's local equivalent — set
+\`SAMPLE_APP_DIR\` in \`.env\`.
+
+You can browse the other industries' pages too; they are all included under
+\`sample-app/app/samples/\`.
 `;
 
 const RUN_REMOTE = `## 3. Run
@@ -311,8 +328,8 @@ APPLITOOLS_API_KEY=
 ${
   target.isLocal
     ? `
-# Where the eyes-capabilities-generator repo lives, so sample-app.js can serve
-# ${target.url}. Defaults to ../eyes-capabilities-generator.
+# The sample app bundled in ./sample-app serves ${target.url} and is used by
+# default. Point this at another copy to override it.
 SAMPLE_APP_DIR=
 `
     : ""
@@ -343,6 +360,12 @@ playwright-report/
               contents: render(SAMPLE_APP_JS, vars),
               language: "javascript" as const,
             },
+            // The sample app itself, so the project has a real target without
+            // needing a checkout of eyes-capabilities-generator.
+            ...SAMPLE_APP_FILES.map((file) => ({
+              ...file,
+              path: `sample-app/${file.path}`,
+            })),
           ]
         : []),
       ...LEVELS.map((level) => ({
