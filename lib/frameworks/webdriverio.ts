@@ -462,7 +462,7 @@ export const webdriverio: FrameworkGenerator = {
                 "@types/mocha": "^10.0.0",
                 "@types/node": "^22.0.0",
                 "ts-node": "^10.9.0",
-                typescript: "^5.7.0",
+                typescript: "^5.9.3",
               }
             : {}),
         },

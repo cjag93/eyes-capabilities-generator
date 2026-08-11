@@ -477,7 +477,7 @@ export const selenium: FrameworkGenerator = {
                 "@types/jest": "^29.5.0",
                 "@types/selenium-webdriver": "^4.1.0",
                 "ts-jest": "^29.2.0",
-                typescript: "^5.7.0",
+                typescript: "^5.9.3",
               }
             : {}),
         },
