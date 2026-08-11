@@ -160,6 +160,57 @@ ${selectors.map((s) => `        "${jsString(s)}",`).join("\n")}
 }
 
 /**
+ * Wrapper the npm scripts call instead of `cypress` directly.
+ *
+ * Cypress ships its own Electron binary, and `ELECTRON_RUN_AS_NODE` makes any
+ * Electron boot as plain Node — so a shell that exports it (some IDE terminals
+ * and CI images do) breaks every Cypress run with a confusing error. It cannot
+ * be fixed from `.env`: dotenv never overwrites a variable the shell already
+ * set, and `cypress.config` is loaded by the Electron process that has already
+ * booted wrong. Deleting it here, in the parent process, is the one place that
+ * works.
+ */
+const CYPRESS_RUN_JS = `// Runs Cypress with a sanitised environment. See README — "Cypress and
+// ELECTRON_RUN_AS_NODE".
+//
+// Electron treats this variable as a flag, so an empty or "0" value can still
+// trigger it. Delete it rather than reassigning it.
+delete process.env.ELECTRON_RUN_AS_NODE;
+
+const { spawn } = require("child_process");
+const path = require("path");
+
+const isWindows = process.platform === "win32";
+const bin = path.join(
+  __dirname,
+  "node_modules",
+  ".bin",
+  isWindows ? "cypress.cmd" : "cypress",
+);
+
+const child = spawn(bin, process.argv.slice(2), {
+  stdio: "inherit",
+  env: process.env,
+  shell: isWindows,
+});
+
+child.on("error", (error) => {
+  console.error("Could not run Cypress from " + bin);
+  console.error("Did you run \\\`npm install\\\`?");
+  console.error(error.message);
+  process.exit(1);
+});
+
+child.on("exit", (code, signal) => {
+  if (signal) {
+    process.kill(process.pid, signal);
+    return;
+  }
+  process.exit(code === null ? 1 : code);
+});
+`;
+
+/**
  * Boots the sample app bundled under `sample-app/`. Only emitted for presets
  * whose sampleUrl is local.
  */
@@ -252,6 +303,26 @@ headless; the \`test\` script adds \`--headed\` to flip the default.)
 
 Use headless in CI — a headed browser needs a display, so \`npm test\` will fail
 on a bare CI runner.
+
+## Cypress and ELECTRON_RUN_AS_NODE
+
+Cypress runs on a bundled Electron binary. If \`ELECTRON_RUN_AS_NODE\` is present
+in the environment, that binary starts as plain Node instead of Chromium and the
+run fails — often with an error that does not mention Electron at all. Some IDE
+terminals and CI images export it.
+
+The npm scripts call \`cypress-run.js\`, which deletes the variable before
+launching Cypress, so this is handled for you. If you invoke Cypress directly,
+clear it first:
+
+\`\`\`bash
+node -e "console.log(process.env.ELECTRON_RUN_AS_NODE)"   # check
+unset ELECTRON_RUN_AS_NODE                                # bash/zsh
+\`\`\`
+
+Setting it to \`0\` is not a fix — Electron treats the variable as present — and
+putting it in \`.env\` cannot help either, because dotenv never overwrites a
+variable the shell already set.
 `;
 
 const RUN_LOCAL = `## 3. Run
@@ -336,22 +407,23 @@ export const cypress: FrameworkGenerator = {
         private: true,
         scripts: {
           ...(target.isLocal ? { "start:sample": "node sample-app.js" } : {}),
-          "cy:open": "cypress open",
+          "cy:open": "node cypress-run.js open",
           // Headed by default so the sample app is visible while the test runs.
-          "cy:run": "cypress run --headed",
-          "cy:run:headless": "cypress run --headless",
+          "cy:run": "node cypress-run.js run --headed",
+          "cy:run:headless": "node cypress-run.js run --headless",
           test: target.isLocal
             ? `start-server-and-test start:sample ${target.url} cy:run`
-            : "cypress run --headed",
+            : "node cypress-run.js run --headed",
           "test:headless": target.isLocal
             ? `start-server-and-test start:sample ${target.url} cy:run:headless`
-            : "cypress run --headless",
+            : "node cypress-run.js run --headless",
         },
         devDependencies: {
           "@applitools/eyes-cypress": "^3.44.0",
           cypress: "^13.15.0",
           dotenv: "^16.4.0",
           ...(target.isLocal ? { "start-server-and-test": "^2.0.0" } : {}),
+          ...(ts ? { typescript: "^5.9.3" } : {}),
         },
       },
       null,
@@ -419,6 +491,20 @@ module.exports = {
 
     const envExample = `# Get your key from https://eyes.applitools.com (Account settings).
 APPLITOOLS_API_KEY=
+
+# Cypress runs on its own Electron binary, and ELECTRON_RUN_AS_NODE makes any
+# Electron boot as plain Node — which breaks the run. \`npm test\` goes through
+# cypress-run.js, which deletes the variable, so you should not need to do
+# anything here.
+#
+# Deliberately left commented out: Electron keys off the variable being present,
+# so an empty value would cause the very failure it looks like it prevents. And
+# a value here could not fix a shell-set one anyway — dotenv never overwrites a
+# variable that is already set. To check your shell:
+#
+#   node -e "console.log(process.env.ELECTRON_RUN_AS_NODE)"
+#
+# ELECTRON_RUN_AS_NODE=
 ${
   target.isLocal
     ? `
@@ -454,6 +540,11 @@ cypress/videos/
     const files: ProjectFile[] = [
       { path: "package.json", contents: packageJson, language: "json" },
       { path: `cypress.config.${ext}`, contents: cypressConfig, language },
+      {
+        path: "cypress-run.js",
+        contents: CYPRESS_RUN_JS,
+        language: "javascript",
+      },
       {
         path: "applitools.config.js",
         contents: applitoolsConfig,

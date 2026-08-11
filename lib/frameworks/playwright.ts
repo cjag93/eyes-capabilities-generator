@@ -319,6 +319,7 @@ export const playwright: FrameworkGenerator = {
           "@playwright/test": "^1.49.0",
           "cross-env": "^7.0.3",
           dotenv: "^16.4.0",
+          ...(ts ? { typescript: "^5.9.3" } : {}),
         },
       },
       null,
